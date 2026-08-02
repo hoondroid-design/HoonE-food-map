@@ -57,10 +57,16 @@
       <input id="searchInput" type="text" placeholder="식당명, 메뉴, 동네로 검색 (예: 초당동, 막국수)" autocomplete="off" />
     </div>
     <div id="categoryChips" class="chips" role="tablist" aria-label="음식 구분 필터"></div>
-    <label class="star-toggle">
-      <input type="checkbox" id="starOnly" />
-      <span>★ 강추만 보기</span>
-    </label>
+    <div class="filter-toggles">
+      <label class="star-toggle">
+        <input type="checkbox" id="starOnly" />
+        <span>★ 강추만 보기</span>
+      </label>
+      <label class="review-toggle">
+        <input type="checkbox" id="reviewOnly" />
+        <span><b class="review-toggle-icon">N</b> 리뷰만 보기</span>
+      </label>
+    </div>
   </div>
 </div>
 

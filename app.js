@@ -287,12 +287,11 @@ function buildDirectionLinks(item) {
   if (!item.lat || !item.lng) return "";
   const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`;
   const tmapUrl = `tmap://route?goalname=${encodeURIComponent(item.name)}&goalx=${item.lng}&goaly=${item.lat}`;
-  let html = `<div class="cta-row">`;
-  html += `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 카카오맵 길찾기</a>`;
+  
+  let html = `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 카카오맵 길찾기</a>`;
   if (IS_MOBILE) {
     html += `<a class="detail-link detail-link--alt" href="${tmapUrl}">🚕 티맵 길찾기</a>`;
   }
-  html += `</div>`;
   return html;
 }
 
@@ -325,7 +324,7 @@ function openDetail(item) {
     <div class="detail-title">${item.starred ? "★ " : ""}${escapeHtml(item.name)}</div>
     <div class="detail-row detail-row--address">
       <span><b>주소</b> · ${escapeHtml(addressText)}</span>
-      ${item.address ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 주소복사</button>` : ""}
+      <button type="button" class="copy-btn" id="copyAddressBtn">📋 주소복사</button>
     </div>
     <div class="detail-row"><b>방문 여부</b> · ${item.visited ? "직접 방문함" : "미방문/전언"}</div>
     ${item.note ? `
@@ -334,7 +333,7 @@ function openDetail(item) {
         ${escapeHtml(item.note)}
       </div>` : ""}
     <div class="detail-actions">
-      ${item.blog ? `<a class="detail-link" href="${item.blog}" target="_blank" rel="noopener">작성자 후기 보러가기 →</a>` : ""}
+      ${item.blog ? `<a class="detail-link detail-link--naver" href="${item.blog}" target="_blank" rel="noopener">작성자 후기 보러가기 →</a>` : ""}
       ${buildDirectionLinks(item)}
     </div>
   `;
@@ -343,9 +342,9 @@ function openDetail(item) {
   const copyBtn = document.getElementById("copyAddressBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
-      copyToClipboard(item.address)
+      copyToClipboard(addressText)
         .then(() => {
-          copyBtn.textContent = "✅ 복사됨";
+          copyBtn.textContent = "✅ 복사완료";
           copyBtn.classList.add("copy-btn--done");
           setTimeout(() => {
             copyBtn.textContent = "📋 주소복사";

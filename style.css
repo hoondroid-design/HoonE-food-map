@@ -133,7 +133,15 @@ body {
   border-color: var(--ink);
   color: #fff;
 }
-.star-toggle {
+.filter-toggles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.star-toggle, .review-toggle {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -142,9 +150,25 @@ body {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  margin-left: auto;
+  user-select: none;
 }
-.star-toggle input { accent-color: var(--primary); width: 16px; height: 16px; }
+
+.star-toggle input { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
+.review-toggle input { accent-color: var(--naver); width: 16px; height: 16px; cursor: pointer; }
+
+.review-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--naver);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  margin-right: 1px;
+}
 
 /* Layout */
 .layout {

@@ -20,5 +20,5 @@ const CONFIG = {
 
   // 클릭수를 기록할 Google Apps Script 웹앱 URL
   // (README.md "클릭수 로깅 설정" 참고, 배포 후 나오는 /exec 로 끝나는 주소)
-  CLICK_LOG_URL: "https://script.google.com/macros/s/여기에_배포된_스크립트_ID/exec",
+  CLICK_LOG_URL: "https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec",
 };

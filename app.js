@@ -258,7 +258,11 @@ function isItemVisible(item) {
     item.note.toLowerCase().includes(q);
   const matchesCategory = CURRENT_CATEGORY === "전체" || item.category === CURRENT_CATEGORY;
   const matchesStar = !els.starOnly.checked || item.starred;
-  return matchesQuery && matchesCategory && matchesStar;
+  
+  // N 리뷰(블로그 링크)가 존재하는 항목만 필터링
+  const matchesReview = !els.reviewOnly.checked || !!(item.blog && item.blog.trim());
+
+  return matchesQuery && matchesCategory && matchesStar && matchesReview;
 }
 
 function renderList(items) {

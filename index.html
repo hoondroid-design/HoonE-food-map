@@ -6,9 +6,8 @@
 <title>강릉 뭐먹지 — hoond의 로컬 맛집 지도</title>
 <meta name="description" content="강릉 현지인이 직접 다녀본 맛집만 골라 담은 지도. 사람 많고 유명한 곳 대신, 진짜 로컬 맛집을 찾아보세요." />
 
-<!-- [파비콘 설정] 루트 폴더에 favicon.png 또는 favicon.ico 파일을 올려두시면 적용됩니다. -->
-<link rel="icon" href="그림1.png" type="image/png" />
-<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<!-- [파비콘 무한로딩 완전 방지] 내장형 SVG 파비콘 (파일이 없어도 로딩 지연 없음) -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>">
 
 <!-- Google Analytics (GA4) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -19,9 +18,8 @@
   gtag('config', 'G-XXXXXXXXXX');
 </script>
 
-<!-- Pretendard 고딕 폰트 적용 -->
+<!-- Pretendard 고딕 폰트 -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -30,8 +28,9 @@
   <div class="header-inner">
     <div class="brand">
       <span class="brand-eyebrow">GANGNEUNG LOCAL GUIDE</span>
-      <h1>"야, 강릉가면 뭐먹어?"</h1>
-      <span class="brand-sub">since 2017 | "강릉 맛집" 질문 천번만번 받아서 가본 곳만 모아 현지인이 직접 만든 강릉 로컬 맛 지도 </span>
+      <h1>"야, 강릉가면 뭐먹어...?</h1>
+      <span class="brand-sub">"강릉 맛집" 질문 천번만번 받아서 가본 곳만 모아 현지인이 직접 만든 강릉 로컬 맛 지도
+</span>
     </div>
     <div class="header-meta">
       <span id="visitCounter" class="meta-pill">방문자 집계 중…</span>
@@ -67,42 +66,35 @@
   </section>
 </main>
 
-<!-- 상세 바텀시트 (모바일) / 사이드 카드 (PC) -->
+<!-- 상세 정보 시트 -->
 <div id="detailSheet" class="detail-sheet" hidden>
   <button id="detailClose" class="detail-close" aria-label="닫기">✕</button>
   <div id="detailBody"></div>
 </div>
 
-<!-- 하단 롤링 광고 배너 영역 (PC: 1000x180px, 모바일 반응형) -->
+<!-- 롤링 광고 배너 영역 -->
 <section class="banner-section">
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
-      <!-- 배너 1 : 이미지 경로와 href 링크를 직접 변경해주세요 -->
       <a href="https://example.com/link1" target="_blank" rel="noopener" class="banner-slide">
-        <img src="banner1.jpg" alt="광고 배너 1" onerror="this.src='https://via.placeholder.com/1000x180/ff5a5f/ffffff?text=Banner+1+(1000x180)'" />
+        <img src="banner1.jpg" alt="광고 배너 1" onerror="this.src='https://via.placeholder.com/1000x180/ff385c/ffffff?text=Banner+1+(1000x180)'" />
       </a>
-      <!-- 배너 2 -->
       <a href="https://example.com/link2" target="_blank" rel="noopener" class="banner-slide">
-        <img src="banner2.jpg" alt="광고 배너 2" onerror="this.src='https://via.placeholder.com/1000x180/008489/ffffff?text=Banner+2+(1000x180)'" />
+        <img src="banner2.jpg" alt="광고 배너 2" onerror="this.src='https://via.placeholder.com/1000x180/222222/ffffff?text=Banner+2+(1000x180)'" />
       </a>
-      <!-- 배너 3 -->
       <a href="https://example.com/link3" target="_blank" rel="noopener" class="banner-slide">
-        <img src="banner3.jpg" alt="광고 배너 3" onerror="this.src='https://via.placeholder.com/1000x180/484848/ffffff?text=Banner+3+(1000x180)'" />
+        <img src="banner3.jpg" alt="광고 배너 3" onerror="this.src='https://via.placeholder.com/1000x180/008489/ffffff?text=Banner+3+(1000x180)'" />
       </a>
     </div>
-    
-    <!-- 이전/다음 컨트롤 버튼 -->
     <button class="banner-btn prev" id="bannerPrev" aria-label="이전 배너">❮</button>
     <button class="banner-btn next" id="bannerNext" aria-label="다음 배너">❯</button>
-    
-    <!-- 인디케이터 (점) -->
     <div class="banner-dots" id="bannerDots"></div>
   </div>
 </section>
 
 <footer class="site-footer">
-  <p>* 사람 많고 워낙 유명한 곳은 제외했어요. 맛 평가는 매우 주관적입니다. 선택은 당신 몫!</p>
-  <p>* 폐업된 곳이 있을 수 있어요. 방문 전 최신 정보를 네이버·카카오에서 한 번 더 확인해주세요.</p>
+  <p>* 사람 많고 워낙 유명한 곳은 제외했어요. 맛 평가는 매우 주관적입니다. 선택은 오로지 당신 몫!</p>
+  <p>* 폐업된 곳이 있을 수 있어요. 방문 전 최신 정보를 네이버·카카오 등에서 한 번 더 확인해주세요.</p>
   <p class="copyright">
     Copyright © 2026 HoonE. All rights reserved.<br />
     본 사이트의 디자인 및 오픈소스 코드를 제외한 창작 의도, 리뷰 등 작성된 모든 게시물의 저작권은 작성자에게 있습니다. 무단 도용 및 재배포를 금지합니다.
@@ -110,7 +102,7 @@
 </footer>
 
 <!-- Kakao Maps SDK -->
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0470fb23303f174ae3f6cc6b82426f77&libraries=services"></script>
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=KAKAO_APP_KEY&libraries=services"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>

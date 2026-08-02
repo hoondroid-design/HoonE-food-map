@@ -1,5 +1,5 @@
 // ============================================================
-// 강릉 뭐먹지 — app.js (UI 개선 & 구글시트 수정일 자동연동)
+// 강릉 뭐먹지 — app.js (E열 주소 기준 지오코딩 우대 적용)
 // ============================================================
 
 const els = {
@@ -25,7 +25,9 @@ let markers = {};
 let overlays = {};       
 const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-const COORD_CACHE_KEY = "gnfood_coord_cache_v3";
+// 캐시 키 버전 업 (이전의 잘못 검색된 엉뚱한 위치 캐시 완전 초기화)
+const COORD_CACHE_KEY = "gnfood_coord_cache_v4_colE";
+
 function loadCoordCache() {
   try { return JSON.parse(localStorage.getItem(COORD_CACHE_KEY)) || {}; }
   catch { return {}; }
@@ -34,7 +36,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. 구글시트 CSV 및 수정일 불러오기
+// 1. 구글시트 CSV 불러오기 (E열 = 주소 인식)
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_NAME, SHEET_RANGE } = CONFIG;
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
@@ -49,8 +51,6 @@ function buildSheetUrl() {
 async function fetchLastUpdatedDate() {
   try {
     const res = await fetch(`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/edit`);
-    const text = await res.text();
-    // 구글 시트 HTML 내의 마지막 업데이트 타임스탬프 파싱 시도
     if (res.ok) {
       const today = new Date();
       return `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} 업데이트`;
@@ -74,16 +74,20 @@ async function loadSheetData() {
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || r.length < 4) continue;
-    const [star, category, menu, name, location, note, visited, blog, address] = r;
+    
+    // E열(index 4)을 주소(Address)로 매핑
+    const [star, category, menu, name, address, note, visited, blog] = r;
     if (!name || !name.trim()) continue; 
+
+    const cleanAddress = (address || "").trim();
+
     items.push({
-      id: `${name.trim()}__${location ? location.trim() : ""}`,
+      id: `${name.trim()}__${cleanAddress}`,
       starred: !!(star && star.trim()),
       category: (category || "").trim() || "기타",
       menu: (menu || "").trim(),
       name: name.trim(),
-      location: (location || "").trim(),
-      address: (address || "").trim(),
+      address: cleanAddress, // E열 주소
       note: (note || "").trim(),
       visited: (visited || "").trim() === "O",
       blog: (blog || "").trim(),
@@ -94,19 +98,7 @@ async function loadSheetData() {
   return items;
 }
 
-// 2. 장소검색/지오코딩
-function keywordSearchOnce(query) {
-  return new Promise((resolve) => {
-    places.keywordSearch(query, (result, status) => {
-      if (status === kakao.maps.services.Status.OK && result.length > 0) {
-        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
-      } else {
-        resolve(null);
-      }
-    });
-  });
-}
-
+// 2. 카카오 주소/키워드 검색 (주소 검색 1순위 적용)
 function geocodeAddressOnce(address) {
   return new Promise((resolve) => {
     geocoder.addressSearch(address, (result, status) => {
@@ -119,8 +111,16 @@ function geocodeAddressOnce(address) {
   });
 }
 
-function coordSourceKey(it) {
-  return it.address ? `addr:${it.address}` : `kw:강릉 ${it.location} ${it.name}`;
+function keywordSearchOnce(query) {
+  return new Promise((resolve) => {
+    places.keywordSearch(query, (result, status) => {
+      if (status === kakao.maps.services.Status.OK && result.length > 0) {
+        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
+      } else {
+        resolve(null);
+      }
+    });
+  });
 }
 
 async function resolveCoordinates(items) {
@@ -130,7 +130,7 @@ async function resolveCoordinates(items) {
 
   items.forEach((it) => {
     const cached = cache[it.id];
-    if (cached && cached.source === coordSourceKey(it)) {
+    if (cached) {
       it.lat = cached.lat;
       it.lng = cached.lng;
       resolvedCount++;
@@ -144,17 +144,22 @@ async function resolveCoordinates(items) {
 
   for (const it of toLookup) {
     let coord = null;
+    
+    // 1순위: E열에 입력된 주소를 정확한 지오코더 주소로 찾기
     if (it.address) {
       coord = await geocodeAddressOnce(it.address);
     }
+    
+    // 2순위: 주소로 도저히 못 찾을 경우 상호명으로 보조 검색
     if (!coord) {
-      coord = await keywordSearchOnce(`강릉 ${it.location} ${it.name}`.trim())
+      coord = await keywordSearchOnce(`강릉 ${it.address} ${it.name}`.trim())
         || await keywordSearchOnce(`강릉 ${it.name}`);
     }
+
     if (coord) {
       it.lat = coord.lat;
       it.lng = coord.lng;
-      cache[it.id] = { ...coord, source: coordSourceKey(it) };
+      cache[it.id] = coord;
       resolvedCount++;
       addOrUpdateMarker(it);
     }
@@ -169,10 +174,10 @@ function renderMapStatus(resolved, total, loading) {
   const failed = total - resolved;
   els.mapStatus.textContent = loading
     ? `위치 확인 중… (${resolved}/${total})`
-    : `지도에 ${resolved}곳 표시됨 ${failed > 0 ? `(위치 미확인 ${failed}곳은 목록 클릭 후 주소 확인)` : ''}`;
+    : `지도에 ${resolved}곳 정확히 표시됨 ${failed > 0 ? `(주소 미확인 ${failed}곳)` : ''}`;
 }
 
-// 3. 지도 초기화 & 마커 생성
+// 3. 지도 및 마커 제어
 function initMap() {
   map = new kakao.maps.Map(els.map, {
     center: new kakao.maps.LatLng(CONFIG.MAP_CENTER.lat, CONFIG.MAP_CENTER.lng),
@@ -221,7 +226,7 @@ function applyVisibility(item, visible) {
   if (o) o.setMap(visible ? map : null);
 }
 
-// 4. 식당 목록 렌더링 (요청 사항 반영)
+// 4. 식당 목록 및 카테고리
 function renderChips(items) {
   const cats = ["전체", ...Array.from(new Set(items.map((i) => i.category)))];
   els.chips.innerHTML = "";
@@ -248,8 +253,7 @@ function isItemVisible(item) {
     !q ||
     item.name.toLowerCase().includes(q) ||
     item.menu.toLowerCase().includes(q) ||
-    item.location.toLowerCase().includes(q) ||
-    (item.address || "").toLowerCase().includes(q) ||
+    item.address.toLowerCase().includes(q) ||
     item.note.toLowerCase().includes(q);
   const matchesCategory = CURRENT_CATEGORY === "전체" || item.category === CURRENT_CATEGORY;
   const matchesStar = !els.starOnly.checked || item.starred;
@@ -265,7 +269,6 @@ function renderList(items) {
     const li = document.createElement("li");
     li.className = "list-item";
     
-    // 블로그 링크 유무 뱃지 & 별 위치 이동
     const reviewBadge = item.blog ? `<span class="review-badge" title="리뷰 있음">N</span>` : "";
     const starIcon = item.starred ? `<span class="star-badge">★</span>` : "";
 
@@ -279,7 +282,7 @@ function renderList(items) {
           ${reviewBadge}
         </div>
         <div class="menu">${escapeHtml(item.menu)}</div>
-        <div class="loc">${escapeHtml(item.address || item.location)}</div>
+        <div class="loc">${escapeHtml(item.address)}</div>
       </div>
       <div class="arrow-btn" aria-label="상세보기">›</div>
     `;
@@ -342,13 +345,12 @@ function copyToClipboard(text) {
 }
 
 function openDetail(item) {
-  const addressText = item.address || item.location;
   els.detailBody.innerHTML = `
     <div class="detail-eyebrow">${escapeHtml(item.category)} · ${escapeHtml(item.menu)}</div>
     <div class="detail-title">${item.starred ? "★ " : ""}${escapeHtml(item.name)}</div>
     <div class="detail-row detail-row--address">
-      <span><b>주소</b> · ${escapeHtml(addressText)}</span>
-      <button type="button" class="copy-btn" id="copyAddressBtn">📋 주소복사</button>
+      <span><b>주소</b> · ${escapeHtml(item.address)}</span>
+      ${item.address ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 주소복사</button>` : ""}
     </div>
     <div class="detail-row"><b>방문 여부</b> · ${item.visited ? "직접 방문함" : "미방문/전언"}</div>
     ${item.note ? `
@@ -366,7 +368,7 @@ function openDetail(item) {
   const copyBtn = document.getElementById("copyAddressBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
-      copyToClipboard(addressText)
+      copyToClipboard(item.address)
         .then(() => {
           copyBtn.textContent = "✅ 복사완료";
           copyBtn.classList.add("copy-btn--done");
@@ -489,7 +491,6 @@ els.search.addEventListener("input", renderAll);
 els.starOnly.addEventListener("change", renderAll);
 
 async function bootstrap() {
-  // 구글시트 변경일자 자동 감지 및 표기
   const updatedText = await fetchLastUpdatedDate();
   els.verDate.textContent = updatedText;
 

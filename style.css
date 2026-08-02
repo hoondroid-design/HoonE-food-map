@@ -71,6 +71,18 @@ body {
 }
 .meta-pill--muted { color: var(--ink-sub); background: #f7f7f7; }
 
+/* 👇 [여기 바로 아래에 붙여넣어 주세요!] */
+.meta-pill--share {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.meta-pill--share:hover {
+  background: #444444;
+}
+
 /* Toolbar */
 .toolbar-wrapper {
   background: #ffffff;

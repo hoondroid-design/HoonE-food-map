@@ -10,6 +10,7 @@ const els = {
   chips: document.getElementById("categoryChips"),
   search: document.getElementById("searchInput"),
   starOnly: document.getElementById("starOnly"),
+  reviewOnly: document.getElementById("reviewOnly"),
   totalCount: document.getElementById("totalCount"),
   visitCounter: document.getElementById("visitCounter"),
   verDate: document.getElementById("verDate"),

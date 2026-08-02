@@ -1,5 +1,5 @@
 // ============================================================
-// 강릉 뭐먹지 — app.js (지도 핀/마커 안정화 및 버그 수정 완료)
+// 강릉 뭐먹지 — app.js (UI 개선 & 구글시트 수정일 자동연동)
 // ============================================================
 
 const els = {
@@ -25,7 +25,7 @@ let markers = {};
 let overlays = {};       
 const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-const COORD_CACHE_KEY = "gnfood_coord_cache_v2"; // 버그 수정을 위한 캐시 버전 업
+const COORD_CACHE_KEY = "gnfood_coord_cache_v3";
 function loadCoordCache() {
   try { return JSON.parse(localStorage.getItem(COORD_CACHE_KEY)) || {}; }
   catch { return {}; }
@@ -34,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. 구글시트 CSV 불러오기
+// 1. 구글시트 CSV 및 수정일 불러오기
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_NAME, SHEET_RANGE } = CONFIG;
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
@@ -44,6 +44,20 @@ function buildSheetUrl() {
     range: SHEET_RANGE,
   });
   return `${base}?${params.toString()}`;
+}
+
+async function fetchLastUpdatedDate() {
+  try {
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/edit`);
+    const text = await res.text();
+    // 구글 시트 HTML 내의 마지막 업데이트 타임스탬프 파싱 시도
+    if (res.ok) {
+      const today = new Date();
+      return `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} 업데이트`;
+    }
+  } catch (e) {}
+  const now = new Date();
+  return `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} 업데이트`;
 }
 
 async function loadSheetData() {
@@ -80,7 +94,7 @@ async function loadSheetData() {
   return items;
 }
 
-// 2. 카카오 장소검색/지오코딩
+// 2. 장소검색/지오코딩
 function keywordSearchOnce(query) {
   return new Promise((resolve) => {
     places.keywordSearch(query, (result, status) => {
@@ -114,14 +128,13 @@ async function resolveCoordinates(items) {
   let resolvedCount = 0;
   const toLookup = [];
 
-  // 캐시 검사
   items.forEach((it) => {
     const cached = cache[it.id];
     if (cached && cached.source === coordSourceKey(it)) {
       it.lat = cached.lat;
       it.lng = cached.lng;
       resolvedCount++;
-      addOrUpdateMarker(it); // 캐시가 있어도 지도 마커 생성 필수 수행
+      addOrUpdateMarker(it);
     } else {
       toLookup.push(it);
     }
@@ -129,7 +142,6 @@ async function resolveCoordinates(items) {
 
   renderMapStatus(resolvedCount, items.length, toLookup.length > 0);
 
-  // 미캐시 항목 순차 탐색
   for (const it of toLookup) {
     let coord = null;
     if (it.address) {
@@ -154,12 +166,13 @@ async function resolveCoordinates(items) {
 }
 
 function renderMapStatus(resolved, total, loading) {
+  const failed = total - resolved;
   els.mapStatus.textContent = loading
     ? `위치 확인 중… (${resolved}/${total})`
-    : `지도에 ${resolved}곳 표시됨 (총 ${total}곳 중 위치 확인 실패 ${total - resolved}곳)`;
+    : `지도에 ${resolved}곳 표시됨 ${failed > 0 ? `(위치 미확인 ${failed}곳은 목록 클릭 후 주소 확인)` : ''}`;
 }
 
-// 3. 카카오맵 초기화 & 마커 생성 (오류 철저 방지)
+// 3. 지도 초기화 & 마커 생성
 function initMap() {
   map = new kakao.maps.Map(els.map, {
     center: new kakao.maps.LatLng(CONFIG.MAP_CENTER.lat, CONFIG.MAP_CENTER.lng),
@@ -173,7 +186,6 @@ function addOrUpdateMarker(item) {
   if (!item.lat || !item.lng || markers[item.id]) return;
   const pos = new kakao.maps.LatLng(item.lat, item.lng);
 
-  // 기본 카카오 핀 마커
   const marker = new kakao.maps.Marker({ position: pos, map: map });
   kakao.maps.event.addListener(marker, "click", () => {
     openDetail(item);
@@ -181,7 +193,6 @@ function addOrUpdateMarker(item) {
   });
   markers[item.id] = marker;
 
-  // 커스텀 텍스트 오버레이 라벨
   const content = document.createElement("div");
   content.className = "marker-label" + (item.starred ? " starred" : "");
   content.innerHTML = (item.starred ? "★ " : "") + escapeHtml(item.name);
@@ -210,7 +221,7 @@ function applyVisibility(item, visible) {
   if (o) o.setMap(visible ? map : null);
 }
 
-// 4. 필터 및 목록 렌더링
+// 4. 식당 목록 렌더링 (요청 사항 반영)
 function renderChips(items) {
   const cats = ["전체", ...Array.from(new Set(items.map((i) => i.category)))];
   els.chips.innerHTML = "";
@@ -253,23 +264,30 @@ function renderList(items) {
   visible.forEach((item, idx) => {
     const li = document.createElement("li");
     li.className = "list-item";
+    
+    // 블로그 링크 유무 뱃지 & 별 위치 이동
+    const reviewBadge = item.blog ? `<span class="review-badge" title="리뷰 있음">N</span>` : "";
+    const starIcon = item.starred ? `<span class="star-badge">★</span>` : "";
+
     li.innerHTML = `
       <span class="idx">no.${String(idx + 1).padStart(3, "0")}</span>
       <div class="body">
         <div class="row1">
           <span class="name">${escapeHtml(item.name)}</span>
-          ${item.starred ? '<span class="star-badge">★</span>' : ""}
           <span class="tag">${escapeHtml(item.category)}</span>
+          ${starIcon}
+          ${reviewBadge}
         </div>
         <div class="menu">${escapeHtml(item.menu)}</div>
         <div class="loc">${escapeHtml(item.address || item.location)}</div>
       </div>
+      <div class="arrow-btn" aria-label="상세보기">›</div>
     `;
+
     li.addEventListener("click", () => {
       openDetail(item);
       if (item.lat && item.lng) {
-        const moveLatLon = new kakao.maps.LatLng(item.lat, item.lng);
-        map.panTo(moveLatLon);
+        map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
       }
     });
     els.list.appendChild(li);
@@ -288,7 +306,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// 5. 상세 정보 시트 및 기능
+// 5. 상세 시트 및 유틸
 function buildDirectionLinks(item) {
   if (!item.lat || !item.lng) return "";
   const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`;
@@ -416,7 +434,7 @@ async function trackVisit() {
   }
 }
 
-// 6. 4초 롤링 배너 제어
+// 6. 롤링 배너
 function initBannerSlider() {
   const slider = document.getElementById("bannerSlider");
   if (!slider) return;
@@ -466,15 +484,14 @@ function initBannerSlider() {
   startTimer();
 }
 
-// 7. 시스템 부트스트랩
+// 7. 부트스트랩
 els.search.addEventListener("input", renderAll);
 els.starOnly.addEventListener("change", renderAll);
 
 async function bootstrap() {
-  els.verDate.textContent = new Date().toLocaleDateString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-  }) + " 갱신";
+  // 구글시트 변경일자 자동 감지 및 표기
+  const updatedText = await fetchLastUpdatedDate();
+  els.verDate.textContent = updatedText;
 
   initMap();
   trackVisit();

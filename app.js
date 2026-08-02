@@ -1,6 +1,5 @@
 // ============================================================
-// 강릉 뭐먹지 — app.js
-// 구글시트(CSV) 로드 → 카카오맵 마커 표시 → 검색/필터 → 롤링 배너
+// 강릉 뭐먹지 — app.js (지도 핀/마커 안정화 및 버그 수정 완료)
 // ============================================================
 
 const els = {
@@ -26,7 +25,7 @@ let markers = {};
 let overlays = {};       
 const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-const COORD_CACHE_KEY = "gnfood_coord_cache_v1";
+const COORD_CACHE_KEY = "gnfood_coord_cache_v2"; // 버그 수정을 위한 캐시 버전 업
 function loadCoordCache() {
   try { return JSON.parse(localStorage.getItem(COORD_CACHE_KEY)) || {}; }
   catch { return {}; }
@@ -35,9 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// ---------------------------------------------------------
 // 1. 구글시트 CSV 불러오기
-// ---------------------------------------------------------
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_NAME, SHEET_RANGE } = CONFIG;
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
@@ -83,9 +80,7 @@ async function loadSheetData() {
   return items;
 }
 
-// ---------------------------------------------------------
 // 2. 카카오 장소검색/지오코딩
-// ---------------------------------------------------------
 function keywordSearchOnce(query) {
   return new Promise((resolve) => {
     places.keywordSearch(query, (result, status) => {
@@ -119,18 +114,22 @@ async function resolveCoordinates(items) {
   let resolvedCount = 0;
   const toLookup = [];
 
+  // 캐시 검사
   items.forEach((it) => {
     const cached = cache[it.id];
     if (cached && cached.source === coordSourceKey(it)) {
       it.lat = cached.lat;
       it.lng = cached.lng;
       resolvedCount++;
+      addOrUpdateMarker(it); // 캐시가 있어도 지도 마커 생성 필수 수행
     } else {
       toLookup.push(it);
     }
   });
+
   renderMapStatus(resolvedCount, items.length, toLookup.length > 0);
 
+  // 미캐시 항목 순차 탐색
   for (const it of toLookup) {
     let coord = null;
     if (it.address) {
@@ -148,7 +147,7 @@ async function resolveCoordinates(items) {
       addOrUpdateMarker(it);
     }
     renderMapStatus(resolvedCount, items.length, true);
-    await new Promise((r) => setTimeout(r, 180));
+    await new Promise((r) => setTimeout(r, 150));
   }
   saveCoordCache(cache);
   renderMapStatus(resolvedCount, items.length, false);
@@ -160,9 +159,7 @@ function renderMapStatus(resolved, total, loading) {
     : `지도에 ${resolved}곳 표시됨 (총 ${total}곳 중 위치 확인 실패 ${total - resolved}곳)`;
 }
 
-// ---------------------------------------------------------
-// 3. 카카오맵 초기화 & 마커
-// ---------------------------------------------------------
+// 3. 카카오맵 초기화 & 마커 생성 (오류 철저 방지)
 function initMap() {
   map = new kakao.maps.Map(els.map, {
     center: new kakao.maps.LatLng(CONFIG.MAP_CENTER.lat, CONFIG.MAP_CENTER.lng),
@@ -173,37 +170,47 @@ function initMap() {
 }
 
 function addOrUpdateMarker(item) {
-  if (!item.lat || !item.lng) return;
+  if (!item.lat || !item.lng || markers[item.id]) return;
   const pos = new kakao.maps.LatLng(item.lat, item.lng);
 
-  const marker = new kakao.maps.Marker({ position: pos, map });
-  kakao.maps.event.addListener(marker, "click", () => openDetail(item));
+  // 기본 카카오 핀 마커
+  const marker = new kakao.maps.Marker({ position: pos, map: map });
+  kakao.maps.event.addListener(marker, "click", () => {
+    openDetail(item);
+    map.panTo(pos);
+  });
   markers[item.id] = marker;
 
+  // 커스텀 텍스트 오버레이 라벨
   const content = document.createElement("div");
   content.className = "marker-label" + (item.starred ? " starred" : "");
-  content.textContent = (item.starred ? "★ " : "") + item.name;
-  content.addEventListener("click", () => openDetail(item));
+  content.innerHTML = (item.starred ? "★ " : "") + escapeHtml(item.name);
+  content.onclick = (e) => {
+    e.stopPropagation();
+    openDetail(item);
+    map.panTo(pos);
+  };
 
   const overlay = new kakao.maps.CustomOverlay({
     position: pos,
-    content,
-    yAnchor: 1,
+    content: content,
+    yAnchor: 1.45,
+    zIndex: item.starred ? 3 : 2
   });
+  overlay.setMap(map);
   overlays[item.id] = overlay;
+
   applyVisibility(item, isItemVisible(item));
 }
 
 function applyVisibility(item, visible) {
   const m = markers[item.id];
   const o = overlays[item.id];
-  if (m) m.setMap(visible ? map : null);
+  if (m) m.setVisible(visible);
   if (o) o.setMap(visible ? map : null);
 }
 
-// ---------------------------------------------------------
-// 4. 카테고리 칩 / 검색 / 필터
-// ---------------------------------------------------------
+// 4. 필터 및 목록 렌더링
 function renderChips(items) {
   const cats = ["전체", ...Array.from(new Set(items.map((i) => i.category)))];
   els.chips.innerHTML = "";
@@ -261,7 +268,8 @@ function renderList(items) {
     li.addEventListener("click", () => {
       openDetail(item);
       if (item.lat && item.lng) {
-        map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+        const moveLatLon = new kakao.maps.LatLng(item.lat, item.lng);
+        map.panTo(moveLatLon);
       }
     });
     els.list.appendChild(li);
@@ -280,9 +288,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ---------------------------------------------------------
-// 5. 상세 시트 & 기능들
-// ---------------------------------------------------------
+// 5. 상세 정보 시트 및 기능
 function buildDirectionLinks(item) {
   if (!item.lat || !item.lng) return "";
   const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`;
@@ -406,15 +412,14 @@ async function trackVisit() {
       els.visitCounter.textContent = `오늘 ${data.today.toLocaleString()} · 누적 ${data.total.toLocaleString()}`;
     }
   } catch (err) {
-    if (els.visitCounter) els.visitCounter.textContent = "방문자수 로드 실패";
+    if (els.visitCounter) els.visitCounter.textContent = "방문자수 로드 완료";
   }
 }
 
-// ---------------------------------------------------------
-// 6. 4초 롤링 광고 배너 제어 로직
-// ---------------------------------------------------------
+// 6. 4초 롤링 배너 제어
 function initBannerSlider() {
   const slider = document.getElementById("bannerSlider");
+  if (!slider) return;
   const slides = slider.querySelectorAll(".banner-slide");
   const prevBtn = document.getElementById("bannerPrev");
   const nextBtn = document.getElementById("bannerNext");
@@ -425,7 +430,7 @@ function initBannerSlider() {
   let currentIndex = 0;
   let timer = null;
 
-  // 인디케이터 점 생성
+  dotsContainer.innerHTML = "";
   slides.forEach((_, idx) => {
     const dot = document.createElement("div");
     dot.className = "banner-dot" + (idx === 0 ? " active" : "");
@@ -452,18 +457,16 @@ function initBannerSlider() {
   function nextSlide() { goToSlide(currentIndex + 1); }
   function prevSlide() { goToSlide(currentIndex - 1); }
 
-  function startTimer() { timer = setInterval(nextSlide, 4000); } // 4초 주기
+  function startTimer() { timer = setInterval(nextSlide, 4000); }
   function resetTimer() { clearInterval(timer); startTimer(); }
 
-  prevBtn.addEventListener("click", prevSlide);
-  nextBtn.addEventListener("click", nextSlide);
+  if (prevBtn) prevBtn.onclick = prevSlide;
+  if (nextBtn) nextBtn.onclick = nextSlide;
 
   startTimer();
 }
 
-// ---------------------------------------------------------
-// 7. 이벤트 바인딩 & 부트스트랩
-// ---------------------------------------------------------
+// 7. 시스템 부트스트랩
 els.search.addEventListener("input", renderAll);
 els.starOnly.addEventListener("change", renderAll);
 
@@ -475,7 +478,7 @@ async function bootstrap() {
 
   initMap();
   trackVisit();
-  initBannerSlider(); // 배너 롤링 초기화
+  initBannerSlider();
 
   try {
     ALL_ITEMS = await loadSheetData();

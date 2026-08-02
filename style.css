@@ -1,5 +1,5 @@
 /* ============================================================
-   강릉 뭐먹지 — Modern Clean White Theme (Fixes applied)
+   강릉 뭐먹지 — Modern Clean White Theme
 ============================================================= */
 :root {
   --bg: #f7f7f7;
@@ -10,6 +10,7 @@
   --line: #ebebeb;
   --line-dark: #dddddd;
   --star: #ffb400;
+  --naver: #03cf5d;
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
@@ -182,21 +183,39 @@ body {
   cursor: pointer;
   display: flex;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
   transition: background .15s ease;
 }
 .list-item:hover { background: #f9f9f9; }
+.list-item:hover .arrow-btn { color: var(--ink); transform: translateX(3px); }
 .list-item .idx {
   font-size: 12px;
   font-weight: 600;
   color: var(--ink-sub);
-  padding-top: 2px;
   min-width: 30px;
 }
 .list-item .body { flex: 1; min-width: 0; }
 .list-item .row1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .list-item .name { font-weight: 700; font-size: 16px; color: var(--ink); }
-.star-badge { color: var(--star); font-size: 14px; }
+
+/* 별 아이콘 (카테고리 우측으로 이동) */
+.star-badge { color: var(--star); font-size: 14px; margin-left: 2px; }
+
+/* 네이버 리뷰 유무 N 뱃지 */
+.review-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--naver);
+  color: #ffffff;
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+}
+
 .tag {
   font-size: 11px;
   font-weight: 600;
@@ -207,6 +226,16 @@ body {
 }
 .list-item .menu { font-size: 13px; color: var(--ink-sub); margin-top: 4px; }
 .list-item .loc { font-size: 12px; color: #a0a0a0; margin-top: 2px; }
+
+/* 클릭 유도 화살표 표기 */
+.arrow-btn {
+  font-size: 20px;
+  color: #ccc;
+  font-weight: 300;
+  transition: all .2s ease;
+  padding-left: 8px;
+}
+
 .empty-state { padding: 40px 20px; text-align: center; color: var(--ink-sub); font-size: 14px; }
 
 /* Detail Sheet */
@@ -282,10 +311,10 @@ body {
   border: none;
 }
 .detail-link:hover { opacity: 0.9; }
-.detail-link--naver { background: #03CF5D !important; color: #ffffff !important; }
+.detail-link--naver { background: var(--naver) !important; color: #ffffff !important; }
 .detail-link--alt { background: #ffffff; color: var(--ink); border: 1px solid var(--ink); }
 
-/* Kakao Overlay Label (모바일/PC 공통 깨짐 방지 완벽 대응) */
+/* Kakao Overlay Label */
 .marker-label {
   font-family: var(--font-body);
   font-size: 12px;

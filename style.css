@@ -438,6 +438,52 @@ body {
   line-height: 1.6;
 }
 
+/* ============================================================
+   Intro 모바일 더보기 (3줄 제한 & 토글 버튼)
+================================================ ============ */
+.intro-container {
+  margin-top: 4px;
+}
+
+.intro-text {
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  color: var(--ink-sub);
+  line-height: 1.6;
+}
+
+/* 기본 PC 화면에서는 더보기 버튼 숨김 */
+.more-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0 0 0;
+  margin-top: 4px;
+}
+
+/* 📱 모바일 화면 (768px 이하) 전용 스타일 */
+@media (max-width: 768px) {
+  /* 3줄 제한 CSS */
+  .intro-text.clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* 미리 보여줄 줄 수 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 모바일에서만 더보기 버튼 노출 */
+  .more-btn {
+    display: inline-block;
+  }
+}
+
+
 /* Responsive */
 @media (max-width: 880px) {
   .layout { grid-template-columns: 1fr; margin: 16px auto; }

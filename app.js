@@ -449,10 +449,7 @@ const LAST_VISIT_DATE_KEY = "gnfood_last_visit_date";
 
 async function trackVisit() {
   const url = CONFIG.CLICK_LOG_URL;
-  if (!url || url.includes("여기에_배포된_스크립트_ID")) {
-    if (els.visitCounter) els.visitCounter.textContent = "방문자 집계 미설정";
-    return;
-  }
+  if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec")) return;
 
   let visitorId = localStorage.getItem(VISITOR_ID_KEY);
   const isNewVisitor = !visitorId;
@@ -471,15 +468,8 @@ async function trackVisit() {
     newToday: isNewToday ? "1" : "0",
   });
 
-  try {
-    const res = await fetch(`${url}?${params.toString()}`);
-    const data = await res.json();
-    if (els.visitCounter && typeof data.total === "number") {
-      els.visitCounter.textContent = `오늘 ${data.today.toLocaleString()} · 누적 ${data.total.toLocaleString()}`;
-    }
-  } catch (err) {
-    if (els.visitCounter) els.visitCounter.textContent = "방문자수 로드 완료";
-  }
+  // mode: "no-cors" 방식으로 구글 보안 차단(CORS)을 회피합니다.
+  fetch(`${url}?${params.toString()}`, { mode: "no-cors" }).catch(() => {});
 }
 
 // 6. 롤링 배너

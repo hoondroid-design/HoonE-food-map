@@ -403,14 +403,14 @@ els.detailClose.addEventListener("click", () => {
 // 클릭 로깅
 function logClick(restaurantName) {
   const url = CONFIG.CLICK_LOG_URL;
-  if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exechttps://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec") || !restaurantName) return;
+  if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec") || !restaurantName) return;
   
-  const params = new URLSearchParams({
+  const query = new URLSearchParams({
     type: "click",
     name: restaurantName
   }).toString();
   
-  fetch(`${url}?${params}`, { mode: "no-cors" }).catch(() => {});
+  fetch(`${url}?${query}`, { mode: "no-cors" }).catch(() => {});
 }
 // 공유 로깅 및 실행 함수
 function logShare(targetName = "사이트전체") {
@@ -424,7 +424,6 @@ function logShare(targetName = "사이트전체") {
   
   fetch(`${url}?${params}`, { mode: "no-cors" }).catch(() => {});
 }
-
 function executeShare(title, text, url, targetName) {
   if (navigator.share) {
     navigator.share({

@@ -1,7 +1,6 @@
 // ============================================================
 // 강릉 뭐먹지 — app.js
-// 구글시트(CSV) 로드 → 카카오맵 마커 표시 → 검색/필터 → 클릭 로깅
-// 수정이 필요한 값은 대부분 config.js 에 있습니다.
+// 구글시트(CSV) 로드 → 카카오맵 마커 표시 → 검색/필터 → 롤링 배너
 // ============================================================
 
 const els = {
@@ -13,17 +12,19 @@ const els = {
   search: document.getElementById("searchInput"),
   starOnly: document.getElementById("starOnly"),
   totalCount: document.getElementById("totalCount"),
+  visitCounter: document.getElementById("visitCounter"),
   verDate: document.getElementById("verDate"),
   detailSheet: document.getElementById("detailSheet"),
   detailBody: document.getElementById("detailBody"),
   detailClose: document.getElementById("detailClose"),
 };
 
-let ALL_ITEMS = [];      // 시트에서 파싱한 전체 데이터
+let ALL_ITEMS = [];      
 let CURRENT_CATEGORY = "전체";
-let map, geocoder;
-let markers = {};        // id -> kakao marker
-let overlays = {};       // id -> kakao label overlay
+let map, places, geocoder;
+let markers = {};        
+let overlays = {};       
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 const COORD_CACHE_KEY = "gnfood_coord_cache_v1";
 function loadCoordCache() {
@@ -35,7 +36,7 @@ function saveCoordCache(cache) {
 }
 
 // ---------------------------------------------------------
-// 1. 구글시트 CSV 불러오기 (gviz range 쿼리 — 시트 공유 설정만 해두면 별도 게시 불필요)
+// 1. 구글시트 CSV 불러오기
 // ---------------------------------------------------------
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_NAME, SHEET_RANGE } = CONFIG;
@@ -58,13 +59,12 @@ async function loadSheetData() {
   const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
   const rows = parsed.data;
 
-  // 첫 행은 헤더(구분/주요메뉴/식당/소재지/비고/방문/작성자 후기) → 건너뜀
   const items = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || r.length < 4) continue;
-    const [star, category, menu, name, location, note, visited, blog] = r;
-    if (!name || !name.trim()) continue; // 식당명 없는 빈 행 skip
+    const [star, category, menu, name, location, note, visited, blog, address] = r;
+    if (!name || !name.trim()) continue; 
     items.push({
       id: `${name.trim()}__${location ? location.trim() : ""}`,
       starred: !!(star && star.trim()),
@@ -72,6 +72,7 @@ async function loadSheetData() {
       menu: (menu || "").trim(),
       name: name.trim(),
       location: (location || "").trim(),
+      address: (address || "").trim(),
       note: (note || "").trim(),
       visited: (visited || "").trim() === "O",
       blog: (blog || "").trim(),
@@ -83,11 +84,11 @@ async function loadSheetData() {
 }
 
 // ---------------------------------------------------------
-// 2. 카카오 장소검색으로 좌표 자동 추정 (식당명 기준, localStorage 캐시)
+// 2. 카카오 장소검색/지오코딩
 // ---------------------------------------------------------
 function keywordSearchOnce(query) {
   return new Promise((resolve) => {
-    geocoder.keywordSearch(query, (result, status) => {
+    places.keywordSearch(query, (result, status) => {
       if (status === kakao.maps.services.Status.OK && result.length > 0) {
         resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
       } else {
@@ -97,6 +98,22 @@ function keywordSearchOnce(query) {
   });
 }
 
+function geocodeAddressOnce(address) {
+  return new Promise((resolve) => {
+    geocoder.addressSearch(address, (result, status) => {
+      if (status === kakao.maps.services.Status.OK && result.length > 0) {
+        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+function coordSourceKey(it) {
+  return it.address ? `addr:${it.address}` : `kw:강릉 ${it.location} ${it.name}`;
+}
+
 async function resolveCoordinates(items) {
   const cache = loadCoordCache();
   let resolvedCount = 0;
@@ -104,7 +121,7 @@ async function resolveCoordinates(items) {
 
   items.forEach((it) => {
     const cached = cache[it.id];
-    if (cached) {
+    if (cached && cached.source === coordSourceKey(it)) {
       it.lat = cached.lat;
       it.lng = cached.lng;
       resolvedCount++;
@@ -115,17 +132,23 @@ async function resolveCoordinates(items) {
   renderMapStatus(resolvedCount, items.length, toLookup.length > 0);
 
   for (const it of toLookup) {
-    const query = `강릉 ${it.location} ${it.name}`.trim();
-    const coord = await keywordSearchOnce(query) || await keywordSearchOnce(`강릉 ${it.name}`);
+    let coord = null;
+    if (it.address) {
+      coord = await geocodeAddressOnce(it.address);
+    }
+    if (!coord) {
+      coord = await keywordSearchOnce(`강릉 ${it.location} ${it.name}`.trim())
+        || await keywordSearchOnce(`강릉 ${it.name}`);
+    }
     if (coord) {
       it.lat = coord.lat;
       it.lng = coord.lng;
-      cache[it.id] = coord;
+      cache[it.id] = { ...coord, source: coordSourceKey(it) };
       resolvedCount++;
       addOrUpdateMarker(it);
     }
     renderMapStatus(resolvedCount, items.length, true);
-    await new Promise((r) => setTimeout(r, 180)); // API 과호출 방지
+    await new Promise((r) => setTimeout(r, 180));
   }
   saveCoordCache(cache);
   renderMapStatus(resolvedCount, items.length, false);
@@ -145,7 +168,8 @@ function initMap() {
     center: new kakao.maps.LatLng(CONFIG.MAP_CENTER.lat, CONFIG.MAP_CENTER.lng),
     level: CONFIG.MAP_LEVEL,
   });
-  geocoder = new kakao.maps.services.Places();
+  places = new kakao.maps.services.Places();
+  geocoder = new kakao.maps.services.Geocoder();
 }
 
 function addOrUpdateMarker(item) {
@@ -207,6 +231,7 @@ function isItemVisible(item) {
     item.name.toLowerCase().includes(q) ||
     item.menu.toLowerCase().includes(q) ||
     item.location.toLowerCase().includes(q) ||
+    (item.address || "").toLowerCase().includes(q) ||
     item.note.toLowerCase().includes(q);
   const matchesCategory = CURRENT_CATEGORY === "전체" || item.category === CURRENT_CATEGORY;
   const matchesStar = !els.starOnly.checked || item.starred;
@@ -230,7 +255,7 @@ function renderList(items) {
           <span class="tag">${escapeHtml(item.category)}</span>
         </div>
         <div class="menu">${escapeHtml(item.menu)}</div>
-        <div class="loc">${escapeHtml(item.location)}</div>
+        <div class="loc">${escapeHtml(item.address || item.location)}</div>
       </div>
     `;
     li.addEventListener("click", () => {
@@ -242,7 +267,6 @@ function renderList(items) {
     els.list.appendChild(li);
   });
 
-  // 지도 위 마커 표시 여부 갱신
   ALL_ITEMS.forEach((item) => applyVisibility(item, isItemVisible(item)));
 }
 
@@ -257,18 +281,83 @@ function escapeHtml(str) {
 }
 
 // ---------------------------------------------------------
-// 5. 상세 시트 + 클릭 로깅
+// 5. 상세 시트 & 기능들
 // ---------------------------------------------------------
+function buildDirectionLinks(item) {
+  if (!item.lat || !item.lng) return "";
+  const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`;
+  const tmapUrl = `tmap://route?goalname=${encodeURIComponent(item.name)}&goalx=${item.lng}&goaly=${item.lat}`;
+  let html = `<div class="cta-row">`;
+  html += `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 카카오맵 길찾기</a>`;
+  if (IS_MOBILE) {
+    html += `<a class="detail-link detail-link--alt" href="${tmapUrl}">🚕 티맵 길찾기</a>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 function openDetail(item) {
+  const addressText = item.address || item.location;
   els.detailBody.innerHTML = `
     <div class="detail-eyebrow">${escapeHtml(item.category)} · ${escapeHtml(item.menu)}</div>
     <div class="detail-title">${item.starred ? "★ " : ""}${escapeHtml(item.name)}</div>
-    <div class="detail-row"><b>위치</b> · ${escapeHtml(item.location)}</div>
+    <div class="detail-row detail-row--address">
+      <span><b>주소</b> · ${escapeHtml(addressText)}</span>
+      ${item.address ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 주소복사</button>` : ""}
+    </div>
     <div class="detail-row"><b>방문 여부</b> · ${item.visited ? "직접 방문함" : "미방문/전언"}</div>
-    ${item.note ? `<div class="detail-note">${escapeHtml(item.note)}</div>` : ""}
-    ${item.blog ? `<a class="detail-link" href="${item.blog}" target="_blank" rel="noopener">작성자 후기 보러가기 →</a>` : ""}
+    ${item.note ? `
+      <div class="detail-note">
+        <div class="detail-note-label">🙋🏻 한 줄 리뷰</div>
+        ${escapeHtml(item.note)}
+      </div>` : ""}
+    <div class="detail-actions">
+      ${item.blog ? `<a class="detail-link" href="${item.blog}" target="_blank" rel="noopener">작성자 후기 보러가기 →</a>` : ""}
+      ${buildDirectionLinks(item)}
+    </div>
   `;
   els.detailSheet.hidden = false;
+
+  const copyBtn = document.getElementById("copyAddressBtn");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      copyToClipboard(item.address)
+        .then(() => {
+          copyBtn.textContent = "✅ 복사됨";
+          copyBtn.classList.add("copy-btn--done");
+          setTimeout(() => {
+            copyBtn.textContent = "📋 주소복사";
+            copyBtn.classList.remove("copy-btn--done");
+          }, 1500);
+        })
+        .catch(() => {
+          copyBtn.textContent = "복사 실패";
+        });
+    });
+  }
+
   logClick(item.name);
 }
 
@@ -278,14 +367,103 @@ els.detailClose.addEventListener("click", () => {
 
 function logClick(restaurantName) {
   const url = CONFIG.CLICK_LOG_URL;
-  if (!url || url.includes("여기에_배포된_스크립트_ID")) return; // 미설정 상태면 스킵
+  if (!url || url.includes("여기에_배포된_스크립트_ID")) return;
   const query = new URLSearchParams({ name: restaurantName }).toString();
-  // Apps Script 웹앱은 CORS 응답을 안 주는 경우가 많아 no-cors 로 fire-and-forget
   fetch(`${url}?${query}`, { mode: "no-cors" }).catch(() => {});
 }
 
+// 방문자수 집계
+const VISITOR_ID_KEY = "gnfood_visitor_id";
+const LAST_VISIT_DATE_KEY = "gnfood_last_visit_date";
+
+async function trackVisit() {
+  const url = CONFIG.CLICK_LOG_URL;
+  if (!url || url.includes("여기에_배포된_스크립트_ID")) {
+    if (els.visitCounter) els.visitCounter.textContent = "방문자 집계 미설정";
+    return;
+  }
+
+  let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+  const isNewVisitor = !visitorId;
+  if (isNewVisitor) {
+    visitorId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem(VISITOR_ID_KEY, visitorId);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const isNewToday = localStorage.getItem(LAST_VISIT_DATE_KEY) !== today;
+  if (isNewToday) localStorage.setItem(LAST_VISIT_DATE_KEY, today);
+
+  const params = new URLSearchParams({
+    type: "visit",
+    newVisitor: isNewVisitor ? "1" : "0",
+    newToday: isNewToday ? "1" : "0",
+  });
+
+  try {
+    const res = await fetch(`${url}?${params.toString()}`);
+    const data = await res.json();
+    if (els.visitCounter && typeof data.total === "number") {
+      els.visitCounter.textContent = `오늘 ${data.today.toLocaleString()} · 누적 ${data.total.toLocaleString()}`;
+    }
+  } catch (err) {
+    if (els.visitCounter) els.visitCounter.textContent = "방문자수 로드 실패";
+  }
+}
+
 // ---------------------------------------------------------
-// 6. 이벤트 바인딩 & 부트스트랩
+// 6. 4초 롤링 광고 배너 제어 로직
+// ---------------------------------------------------------
+function initBannerSlider() {
+  const slider = document.getElementById("bannerSlider");
+  const slides = slider.querySelectorAll(".banner-slide");
+  const prevBtn = document.getElementById("bannerPrev");
+  const nextBtn = document.getElementById("bannerNext");
+  const dotsContainer = document.getElementById("bannerDots");
+
+  if (!slides.length) return;
+
+  let currentIndex = 0;
+  let timer = null;
+
+  // 인디케이터 점 생성
+  slides.forEach((_, idx) => {
+    const dot = document.createElement("div");
+    dot.className = "banner-dot" + (idx === 0 ? " active" : "");
+    dot.addEventListener("click", () => goToSlide(idx));
+    dotsContainer.appendChild(dot);
+  });
+
+  const dots = dotsContainer.querySelectorAll(".banner-dot");
+
+  function goToSlide(index) {
+    currentIndex = index;
+    if (currentIndex >= slides.length) currentIndex = 0;
+    if (currentIndex < 0) currentIndex = slides.length - 1;
+
+    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === currentIndex);
+    });
+    
+    resetTimer();
+  }
+
+  function nextSlide() { goToSlide(currentIndex + 1); }
+  function prevSlide() { goToSlide(currentIndex - 1); }
+
+  function startTimer() { timer = setInterval(nextSlide, 4000); } // 4초 주기
+  function resetTimer() { clearInterval(timer); startTimer(); }
+
+  prevBtn.addEventListener("click", prevSlide);
+  nextBtn.addEventListener("click", nextSlide);
+
+  startTimer();
+}
+
+// ---------------------------------------------------------
+// 7. 이벤트 바인딩 & 부트스트랩
 // ---------------------------------------------------------
 els.search.addEventListener("input", renderAll);
 els.starOnly.addEventListener("change", renderAll);
@@ -297,20 +475,22 @@ async function bootstrap() {
   }) + " 갱신";
 
   initMap();
+  trackVisit();
+  initBannerSlider(); // 배너 롤링 초기화
 
   try {
     ALL_ITEMS = await loadSheetData();
   } catch (err) {
     els.mapStatus.textContent = err.message;
     els.emptyState.hidden = false;
-    els.emptyState.textContent = "데이터를 불러오지 못했습니다. config.js의 시트 설정과 공유 권한을 확인하세요.";
+    els.emptyState.textContent = "데이터를 불러오지 못했습니다. config.js 및 시트 공유 권한을 확인해주세요.";
     return;
   }
 
   els.totalCount.textContent = `${ALL_ITEMS.length}곳 수록`;
   renderChips(ALL_ITEMS);
   renderList(ALL_ITEMS);
-  resolveCoordinates(ALL_ITEMS); // 백그라운드로 진행, 완료되는 대로 마커 추가
+  resolveCoordinates(ALL_ITEMS);
 }
 
 bootstrap();

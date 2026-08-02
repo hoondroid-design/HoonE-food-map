@@ -1,5 +1,5 @@
 // ============================================================
-// 강릉 뭐먹지 — app.js (E열 주소 기준 지오코딩 우대 적용)
+// 강릉 뭐먹지 — app.js (공유하기 카운팅 기능 포함)
 // ============================================================
 
 const els = {
@@ -26,7 +26,7 @@ let markers = {};
 let overlays = {};       
 const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-// 캐시 키 버전 업 (이전의 잘못 검색된 엉뚱한 위치 캐시 완전 초기화)
+// 캐시 키
 const COORD_CACHE_KEY = "gnfood_coord_cache_v4_colE";
 
 function loadCoordCache() {
@@ -99,7 +99,7 @@ async function loadSheetData() {
   return items;
 }
 
-// 2. 카카오 주소/키워드 검색 (주소 검색 1순위 적용)
+// 2. 카카오 주소/키워드 검색
 function geocodeAddressOnce(address) {
   return new Promise((resolve) => {
     geocoder.addressSearch(address, (result, status) => {
@@ -145,13 +145,9 @@ async function resolveCoordinates(items) {
 
   for (const it of toLookup) {
     let coord = null;
-    
-    // 1순위: E열에 입력된 주소를 정확한 지오코더 주소로 찾기
     if (it.address) {
       coord = await geocodeAddressOnce(it.address);
     }
-    
-    // 2순위: 주소로 도저히 못 찾을 경우 상호명으로 보조 검색
     if (!coord) {
       coord = await keywordSearchOnce(`강릉 ${it.address} ${it.name}`.trim())
         || await keywordSearchOnce(`강릉 ${it.name}`);
@@ -364,6 +360,7 @@ function openDetail(item) {
         ${escapeHtml(item.note)}
       </div>` : ""}
     <div class="detail-actions">
+      <button type="button" class="detail-link detail-link--alt" id="shareDetailBtn">🔗 이 식당 공유하기</button>
       ${item.blog ? `<a class="detail-link detail-link--naver" href="${item.blog}" target="_blank" rel="noopener">작성자 후기 보러가기 →</a>` : ""}
       ${buildDirectionLinks(item)}
     </div>
@@ -388,6 +385,19 @@ function openDetail(item) {
     });
   }
 
+  // 식당 상세 공유 버튼
+  const shareDetailBtn = document.getElementById("shareDetailBtn");
+  if (shareDetailBtn) {
+    shareDetailBtn.addEventListener("click", () => {
+      executeShare(
+        `[강릉 뭐먹지] ${item.name}`,
+        `${item.name} (${item.category}) - ${item.menu}\n주소: ${item.address}`,
+        window.location.href,
+        item.name
+      );
+    });
+  }
+
   logClick(item.name);
 }
 
@@ -395,11 +405,42 @@ els.detailClose.addEventListener("click", () => {
   els.detailSheet.hidden = true;
 });
 
+// 클릭 로깅
 function logClick(restaurantName) {
   const url = CONFIG.CLICK_LOG_URL;
   if (!url || url.includes("여기에_배포된_스크립트_ID")) return;
   const query = new URLSearchParams({ name: restaurantName }).toString();
   fetch(`${url}?${query}`, { mode: "no-cors" }).catch(() => {});
+}
+
+// 공유 로깅 및 실행 함수
+function logShare(targetName = "사이트전체") {
+  const url = CONFIG.CLICK_LOG_URL;
+  if (!url || url.includes("여기에_배포된_스크립트_ID")) return;
+  
+  const params = new URLSearchParams({
+    type: "share",
+    target: targetName
+  }).toString();
+  
+  fetch(`${url}?${params}`, { mode: "no-cors" }).catch(() => {});
+}
+
+function executeShare(title, text, url, targetName) {
+  if (navigator.share) {
+    navigator.share({
+      title: title,
+      text: text,
+      url: url,
+    }).then(() => {
+      logShare(targetName);
+    }).catch(() => {});
+  } else {
+    copyToClipboard(url).then(() => {
+      alert("링크가 복사되었습니다! 원하시는 곳에 붙여넣어 공유해보세요.");
+      logShare(targetName);
+    });
+  }
 }
 
 // 방문자수 집계
@@ -491,9 +532,23 @@ function initBannerSlider() {
   startTimer();
 }
 
-// 7. 부트스트랩
+// 7. 부트스트랩 및 이벤트 리스너 바인딩
 els.search.addEventListener("input", renderAll);
 els.starOnly.addEventListener("change", renderAll);
+els.reviewOnly.addEventListener("change", renderAll);
+
+// 상단 헤더 메인 공유 버튼
+const mainShareBtn = document.getElementById("mainShareBtn");
+if (mainShareBtn) {
+  mainShareBtn.addEventListener("click", () => {
+    executeShare(
+      "강릉 뭐먹지 — hoond의 로컬 맛집 지도",
+      "사람 많고 유명한 곳 대신, 진짜 로컬 맛집을 찾아보세요!",
+      window.location.href,
+      "사이트전체"
+    );
+  });
+}
 
 async function bootstrap() {
   const updatedText = await fetchLastUpdatedDate();
@@ -519,6 +574,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-els.search.addEventListener("input", renderAll);
-els.starOnly.addEventListener("change", renderAll);
-els.reviewOnly.addEventListener("change", renderAll); // 추가됨

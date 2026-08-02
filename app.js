@@ -50,13 +50,8 @@ function buildSheetUrl() {
 }
 
 async function fetchLastUpdatedDate() {
-  try {
-    const res = await fetch(`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/edit`);
-    if (res.ok) {
-      const today = new Date();
-      return `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} 업데이트`;
-    }
-  } catch (e) {}
+  // 구글 시트 웹페이지 직접 fetch 요청 시 발생하는 CORS/Preload 블로킹을 방지하기 위해 
+  // 오늘 날짜 기준으로 안전하게 표시합니다.
   const now = new Date();
   return `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} 업데이트`;
 }

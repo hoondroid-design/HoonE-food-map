@@ -409,7 +409,13 @@ els.detailClose.addEventListener("click", () => {
 function logClick(restaurantName) {
   const url = CONFIG.CLICK_LOG_URL;
   if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec")) return;
-  const query = new URLSearchParams({ name: restaurantName }).toString();
+  
+  // type과 name을 명확히 지정하여 전송합니다.
+  const query = new URLSearchParams({
+    type: "click",
+    name: restaurantName || "알수없음"
+  }).toString();
+  
   fetch(`${url}?${query}`, { mode: "no-cors" }).catch(() => {});
 }
 

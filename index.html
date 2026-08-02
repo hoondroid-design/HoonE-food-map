@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>강릉 뭐먹지 — hoond의 로컬 맛집 지도</title>
+<meta name="description" content="강릉 현지인이 직접 다녀본 맛집만 골라 담은 지도. 사람 많고 유명한 곳 대신, 진짜 로컬 맛집을 찾아보세요." />
+
+<!-- ============================================================
+  [설정 1/3] Google Analytics (GA4)
+  아래 G-XXXXXXXXXX 를 발급받은 실제 측정 ID로 교체하세요.
+  (README.md 의 "GA4 설정" 참고)
+============================================================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-eyebrow">GANGNEUNG FOOD FIELD GUIDE</span>
+      <h1>강릉 뭐먹지</h1>
+      <span class="brand-sub">by hoond · 사람 많고 유명한 곳은 뺐어요</span>
+    </div>
+    <div class="header-meta">
+      <span id="totalCount" class="meta-pill">— 곳</span>
+      <span id="verDate" class="meta-pill meta-pill--muted"></span>
+    </div>
+  </div>
+  <svg class="wave-divider" viewBox="0 0 1200 24" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 12 Q 50 0, 100 12 T 200 12 T 300 12 T 400 12 T 500 12 T 600 12 T 700 12 T 800 12 T 900 12 T 1000 12 T 1100 12 T 1200 12"
+      fill="none" stroke="currentColor" stroke-width="2"/>
+  </svg>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <input id="searchInput" type="text" placeholder="식당명, 메뉴, 동네로 검색 (예: 초당동, 막국수)" autocomplete="off" />
+  </div>
+  <div id="categoryChips" class="chips" role="tablist" aria-label="음식 구분 필터"></div>
+  <label class="star-toggle">
+    <input type="checkbox" id="starOnly" />
+    <span>★ 강추만 보기</span>
+  </label>
+</div>
+
+<main class="layout">
+  <section class="map-pane">
+    <div id="map"></div>
+    <div id="mapStatus" class="map-status"></div>
+  </section>
+
+  <section class="list-pane">
+    <ul id="list" class="list"></ul>
+    <p id="emptyState" class="empty-state" hidden>조건에 맞는 맛집이 없어요. 검색어나 필터를 바꿔보세요.</p>
+  </section>
+</main>
+
+<!-- 상세 바텀시트 (모바일) / 사이드 카드 (PC) -->
+<div id="detailSheet" class="detail-sheet" hidden>
+  <button id="detailClose" class="detail-close" aria-label="닫기">✕</button>
+  <div id="detailBody"></div>
+</div>
+
+<footer class="site-footer">
+  <p>* 사람 많고 워낙 유명한 곳은 제외했어요. 맛 평가는 매우 주관적입니다. 여기 없다고 서운해하지 마세요 — 선택은 당신 몫!</p>
+  <p>* 폐업된 곳이 있을 수 있어요. 방문 전 최신 정보를 네이버·카카오에서 한 번 더 확인해주세요.</p>
+</footer>
+
+<!-- Kakao Maps SDK: [설정 2/3] KAKAO_APP_KEY 를 실제 JavaScript 키로 교체하세요 -->
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=KAKAO_APP_KEY&libraries=services"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

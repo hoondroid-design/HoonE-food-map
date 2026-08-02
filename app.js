@@ -519,3 +519,6 @@ async function bootstrap() {
 }
 
 bootstrap();
+els.search.addEventListener("input", renderAll);
+els.starOnly.addEventListener("change", renderAll);
+els.reviewOnly.addEventListener("change", renderAll); // 추가됨

@@ -6,16 +6,18 @@
 <title>강릉 뭐먹지 — hoond의 로컬 맛집 지도</title>
 <meta name="description" content="강릉 현지인이 직접 다녀본 맛집만 골라 담은 지도. 사람 많고 유명한 곳 대신, 진짜 로컬 맛집을 찾아보세요." />
 
-<!-- [파비콘 무한로딩 완전 방지] 내장형 SVG 파비콘 (파일이 없어도 로딩 지연 없음) -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>">
+<!-- 1. 파비콘: 깃허브에 올린 파일명(favicon.png)으로 교체 -->
+<link rel="icon" type="image/png" href="그림1.png" />
+<link rel="apple-touch-icon" href="그림1.png" />
 
-<!-- Google Analytics (GA4) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<!-- 2. Google Analytics (GA4): G-XXXXXXXXXX 를 본인 ID로 교체 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-실제측정ID입력"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
+  gtag('config', 'G-실제측정ID입력');
+</script>
 </script>
 
 <!-- Pretendard 고딕 폰트 -->
@@ -83,7 +85,7 @@
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
       <a href="https://example.com/link1" target="_blank" rel="noopener" class="banner-slide">
-        <img src="banner1.jpg" alt="광고 배너 1" onerror="this.src='https://via.placeholder.com/1000x180/ff385c/ffffff?text=Banner+1+(1000x180)'" />
+        <img src="광고배너-컨티뉴어스.png" alt="광고 배너 1" onerror="this.src='https://litt.ly/continuous_live?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaATb4kRwZG9mAmV4dG4DYWVtAjExAHNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABpzrJc3X-KoXbTzS3je4yDhhqwnr6KPub7ktrW2Q0r1aN0FY_zvo6SfQOZyaF_aem_Qhzdwfk3AzSHEcWeCRdPsg'" />
       </a>
       <a href="https://example.com/link2" target="_blank" rel="noopener" class="banner-slide">
         <img src="banner2.jpg" alt="광고 배너 2" onerror="this.src='https://via.placeholder.com/1000x180/222222/ffffff?text=Banner+2+(1000x180)'" />

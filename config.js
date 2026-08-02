@@ -8,7 +8,7 @@ const CONFIG = {
   SHEET_ID: "19n0gfR3uNBo6AuKYLOvvdTb_MWgaC20gZUsM6JnKffA",
 
   // 시트 하단 탭 이름 (기본은 "시트1" 이지만, 실제 탭 이름으로 바꿔주세요)
-  SHEET_NAME: "시트1",
+  SHEET_NAME: "강릉뭐먹지_BY HOOND",
 
   // 데이터가 시작하는 범위 (기본 구조 기준: A7부터, 넉넉히 1000행까지)
   // 새로운 맛집을 추가할 땐 이 범위 안에만 있으면 자동 반영됩니다.

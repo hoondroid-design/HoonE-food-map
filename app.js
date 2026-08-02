@@ -562,3 +562,28 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+// ============================================================
+// 모바일 Intro 3줄 보기 / 접기 토글
+// ============================================================
+document.addEventListener("DOMContentLoaded", () => {
+  const introText = document.getElementById("introText");
+  if (introText) {
+    introText.classList.add("clamp");
+  }
+});
+
+function toggleIntro() {
+  const introText = document.getElementById("introText");
+  const moreBtn = document.getElementById("moreBtn");
+
+  if (!introText || !moreBtn) return;
+
+  if (introText.classList.contains("clamp")) {
+    introText.classList.remove("clamp");
+    moreBtn.textContent = "접기";
+  } else {
+    introText.classList.add("clamp");
+    moreBtn.textContent = "...더보기";
+  }
+}

@@ -292,23 +292,29 @@ body {
 .detail-row--address {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 8px;
   flex-wrap: wrap;
 }
+
+/* 주소 복사 버튼 스타일 */
 .copy-btn {
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid var(--ink);
-  background: #fff;
-  color: var(--ink);
+  border: 1px solid #d0d0d0;
+  background: #f7f7f7;
+  color: #333333;
   cursor: pointer;
   transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
-.copy-btn:hover { background: var(--ink); color: #fff; }
-.copy-btn--done { background: #222; color: #fff; }
+.copy-btn:hover { background: #e2e2e2; border-color: #bbbbbb; }
+.copy-btn--done { background: #222222 !important; color: #ffffff !important; border-color: #222222 !important; }
+
 .detail-note {
   background: #f7f7f7;
   padding: 14px 16px;
@@ -324,46 +330,44 @@ body {
   color: var(--ink-sub);
   margin-bottom: 4px;
 }
-.detail-actions { margin-top: 18px; }
-.cta-row { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+
+/* CTA 버튼 레이아웃 (좌우 나란히 배치) */
+.detail-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 .detail-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 12px 20px;
   background: var(--ink);
-  color: #fff;
+  color: #ffffff;
   text-decoration: none;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 600;
   transition: opacity .15s ease;
+  border: none;
 }
-.detail-link:hover { opacity: 0.85; }
+.detail-link:hover { opacity: 0.9; }
+
+/* 네이버 키컬러 작성자 후기 버튼 */
+.detail-link--naver {
+  background: #03CF5D !important; /* 네이버 대표 그린 */
+  color: #ffffff !important;
+}
+
 .detail-link--alt {
-  background: #fff;
+  background: #ffffff;
   color: var(--ink);
   border: 1px solid var(--ink);
 }
 
-/* Kakao Overlay Label */
-.marker-label {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-  background: #ffffff;
-  border: 1px solid var(--line-dark);
-  border-radius: 999px;
-  padding: 4px 10px;
-  white-space: nowrap;
-  transform: translateY(-40px);
-  box-shadow: var(--shadow-sm);
-}
-.marker-label.starred {
-  border-color: var(--primary);
-  color: var(--primary);
-}
 
 /* ---------- 롤링 배너 섹션 (PC: 1000x180px 반응형) ---------- */
 .banner-section {

@@ -32,11 +32,41 @@
   gtag('js', new Date());
   gtag('config', 'G-GLHEB5P95Z');
 </script>
-</script>
 
 <!-- Pretendard 고딕 폰트 -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link rel="stylesheet" href="style.css" />
+
+<!-- ★★★ [여기에 JSON-LD 구조화 데이터 삽입] ★★★ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "강릉 현지인 추천 로컬 맛집 지도",
+    "description": "현지인 출신이 직접 선별한 강릉 로컬 맛집 리스트 및 추천 음식점 정보",
+    "url": "https://www.gangneungmatzip.com",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@type": "Restaurant",
+          "name": "강릉 첫 번째 맛집 이름",
+          "image": "https://www.gangneungmatzip.com/thumbnail.png",
+          "servesCuisine": "장칼국수, 한식",
+          "priceRange": "₩",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "강릉시",
+            "addressRegion": "강원특별자치도",
+            "streetAddress": "강원특별자치도 강릉시 도로명주소",
+            "addressCountry": "KR"
+          }
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 

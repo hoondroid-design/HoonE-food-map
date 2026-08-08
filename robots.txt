@@ -12,4 +12,7 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
+User-agent: Yeti
+Allow:/
+
 Sitemap: https://www.gangneungmatzip.com/sitemap.xml

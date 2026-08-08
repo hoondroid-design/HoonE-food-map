@@ -1,3 +1,15 @@
+Plaintext
 User-agent: *
 Allow: /
+
+# 주요 AI 검색봇 접근 허용
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://www.gangneungmatzip.com/sitemap.xml

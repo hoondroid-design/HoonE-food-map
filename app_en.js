@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (All Features Fixed)
+// What to Eat in Gangneung — app_en.js (Dynamic Header Fix)
 // ============================================================
 
 const els = {
@@ -34,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. Fetch Google Sheet Data
+// 1. Fetch Google Sheet Data & Dynamic Column Index Lookup
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
   const ENGLISH_GID = "1598641787";
@@ -57,38 +57,54 @@ async function loadSheetData() {
   const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
   const rows = parsed.data || [];
 
+  if (rows.length < 2) return [];
+
+  // 헤더명을 기준으로 열 인덱스 자동 매핑 (기본값 설정 포함)
+  let idx = {
+    star: 0,
+    category: 1,
+    menu: 2,
+    nameKo: 3,
+    nameEn: 4,
+    addressKo: 5,
+    addressEn: 6,
+    noteEn: 8,
+    visited: 9,
+    blog: 10
+  };
+
+  const headerRow = rows[0].map(h => String(h || "").trim().toLowerCase());
+  headerRow.forEach((h, i) => {
+    if (h.includes("category") || h === "구분") idx.category = i;
+    if (h.includes("featured menu") || h.includes("menu")) idx.menu = i;
+    if (h.includes("name (ko)") || h.includes("name(ko)")) idx.nameKo = i;
+    if (h.includes("name (en)") || h.includes("name(en)")) idx.nameEn = i;
+    if (h.includes("address(ko)") || h.includes("address (ko)")) idx.addressKo = i;
+    if (h.includes("address(en)") || h.includes("address (en)")) idx.addressEn = i;
+    if (h.includes("owner's pick (en)") || h.includes("pick (en)")) idx.noteEn = i;
+    if (h.includes("visited")) idx.visited = i;
+    if (h.includes("owner's review") || h.includes("review")) idx.blog = i;
+  });
+
   const items = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !Array.isArray(r) || r.length < 3) continue;
-    
-    // 시트 이미지 열(Alphabet) 1:1 정확한 인덱스 매핑
-    // A열: Star
-    // B열(r[1]): Category (En)
-    // C열(r[2]): Featured Menu (En)
-    // D열(r[3]): Name (Ko)
-    // E열(r[4]): Name (En)
-    // F열(r[5]): Address (Ko)
-    // G열(r[6]): Address (En)
-    // H열(r[7]): Pick (Ko)
-    // I열(r[8]): Pick (En)
-    // J열(r[9]): Visited in Person
-    // K열(r[10]): Review Link
 
-    const starVal = String(r[0] || "").trim();
-    const category = String(r[1] || "").trim() || "Others";
-    const menu = String(r[2] || "").trim();
-    const nameKo = String(r[3] || "").trim();
-    const nameEn = String(r[4] || "").trim();
-    const addressKo = String(r[5] || "").trim();
-    const addressEn = String(r[6] || "").trim();
-    const noteEn = String(r[8] || "").trim();
+    const starVal = String(r[idx.star] || "").trim();
+    const category = String(r[idx.category] || "").trim() || "Others";
+    const menu = String(r[idx.menu] || "").trim();
+    const nameKo = String(r[idx.nameKo] || "").trim();
+    const nameEn = String(r[idx.nameEn] || "").trim();
+    const addressKo = String(r[idx.addressKo] || "").trim();
+    const addressEn = String(r[idx.addressEn] || "").trim();
+    const noteEn = String(r[idx.noteEn] || "").trim();
     
-    // Visited 'O' 완벽 감지 로직
-    const visitedRaw = String(r[9] || "").trim().toUpperCase();
+    // Visited in Person 감지 ('O' 또는 'o' 정밀 매칭)
+    const visitedRaw = String(r[idx.visited] || "").trim().toUpperCase();
     const visited = (visitedRaw === "O");
     
-    const blog = String(r[10] || "").trim();
+    const blog = String(r[idx.blog] || "").trim();
 
     const displayName = nameEn || nameKo;
     if (!displayName) continue;
@@ -390,7 +406,7 @@ function openDetail(item) {
       <span><b>Address</b> · ${escapeHtml(item.address)}</span>
       ${item.addressKo ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 Copy Korean Address</button>` : ""}
     </div>
-    <div class="detail-row"><b>Visited</b> · ${item.visited ? "Visited in Person" : "Not Visited / Word of Mouth"}</div>
+    <div class="detail-row"><b>Visited</b> · ${item.visited ? "Visited in Person" : "Not Visited Yet"}</div>
     ${item.note ? `
       <div class="detail-note">
         <div class="detail-note-label">🙋🏻 Owner's Review</div>
@@ -404,7 +420,6 @@ function openDetail(item) {
   `;
   els.detailSheet.hidden = false;
 
-  // Address Copy Button Event
   const copyBtn = document.getElementById("copyAddressBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
@@ -420,7 +435,6 @@ function openDetail(item) {
     });
   }
 
-  // Share Button Event (Fixed)
   const shareDetailBtn = document.getElementById("shareDetailBtn");
   if (shareDetailBtn) {
     shareDetailBtn.addEventListener("click", () => {

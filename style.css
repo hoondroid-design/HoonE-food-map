@@ -138,41 +138,37 @@ body {
 }
 
 /* ============================================================
-   ★ [수정완료] 검색창 상단 반응형 롤링 배너 (하단 배너 규격/버튼 통합)
+   ★ [완벽 수정] 검색창 상단 반응형 롤링 배너
 ============================================================= */
 .top-search-banner {
   width: 100%;
   margin-bottom: 12px;
-  overflow: hidden;
+  overflow: hidden; /* 영역 밖 옆 배너 완벽 차단 */
   border-radius: var(--radius-lg);
   position: relative;
   box-shadow: var(--shadow-sm);
-  background: #e0e0e0;
-  aspect-ratio: 1000 / 180; /* 하단 배너와 100% 동일 규격 */
+  background: #f0f0f0;
 }
 
 .top-search-banner .banner-wrapper {
   display: flex;
   width: 100%;
-  height: 100%;
   transition: transform 0.5s ease-in-out;
 }
 
 .top-search-banner .banner-item {
+  flex: 0 0 100%; /* 슬라이더 항목 너비 100% 고정 */
   width: 100%;
-  height: 100%;
-  flex-shrink: 0;
   display: block;
 }
 
 .top-search-banner img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto; /* 고정 높이 제거하여 상하 짤림 원천 차단 */
   display: block;
+  object-fit: contain; /* 원본 비율 100% 보존 */
 }
 
-/* 상단 배너 전용 화살표 버튼 & 도트 인디케이터 스타일 */
 .top-search-banner .banner-btn {
   position: absolute;
   top: 50%;
@@ -492,7 +488,7 @@ body {
 .banner-slide { flex: 0 0 100%; width: 100%; height: 100%; display: block; }
 .banner-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* 공통 배너 버튼 & 도트 스타일 (상/하단 공용) */
+/* 공통 배너 버튼 & 도트 스타일 */
 .banner-btn {
   position: absolute;
   top: 50%;

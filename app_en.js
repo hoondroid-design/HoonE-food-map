@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (Complete Fixed Version)
+// What to Eat in Gangneung — app_en.js (All Features Fixed)
 // ============================================================
 
 const els = {
@@ -34,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. Fetch Google Sheet (English Sheet GID: 1598641787)
+// 1. Fetch Google Sheet Data
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
   const ENGLISH_GID = "1598641787";
@@ -62,18 +62,18 @@ async function loadSheetData() {
     const r = rows[i];
     if (!r || !Array.isArray(r) || r.length < 3) continue;
     
-    // 시트 검은색 열(English Data) 1:1 정확한 인덱스 매핑
-    // A열: 추천 여부 (별점 용도)
-    // B열(r[1]): Category (Bakery, Korean Food, Seafood 등)
-    // C열(r[2]): Featured Menu (Bread, Mandu 등)
+    // 시트 이미지 열(Alphabet) 1:1 정확한 인덱스 매핑
+    // A열: Star
+    // B열(r[1]): Category (En)
+    // C열(r[2]): Featured Menu (En)
     // D열(r[3]): Name (Ko)
     // E열(r[4]): Name (En)
     // F열(r[5]): Address (Ko)
     // G열(r[6]): Address (En)
-    // H열(r[7]): Owner's Pick (Ko) - 생략
-    // I열(r[8]): Owner's Pick (En)
-    // J열(r[9]): Visited in Person (O / X)
-    // K열(r[10]): Owner's Review (Link)
+    // H열(r[7]): Pick (Ko)
+    // I열(r[8]): Pick (En)
+    // J열(r[9]): Visited in Person
+    // K열(r[10]): Review Link
 
     const starVal = String(r[0] || "").trim();
     const category = String(r[1] || "").trim() || "Others";
@@ -83,7 +83,11 @@ async function loadSheetData() {
     const addressKo = String(r[5] || "").trim();
     const addressEn = String(r[6] || "").trim();
     const noteEn = String(r[8] || "").trim();
-    const visited = String(r[9] || "").trim() === "O";
+    
+    // Visited 'O' 완벽 감지 로직
+    const visitedRaw = String(r[9] || "").trim().toUpperCase();
+    const visited = (visitedRaw === "O");
+    
     const blog = String(r[10] || "").trim();
 
     const displayName = nameEn || nameKo;
@@ -327,19 +331,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// 5. Detail Sheet & Modal Open
-function buildDirectionLinks(item) {
-  if (!item.lat || !item.lng) return "";
-  const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.nameKo || item.name)},${item.lat},${item.lng}`;
-  const tmapUrl = `tmap://route?goalname=${encodeURIComponent(item.nameKo || item.name)}&goalx=${item.lng}&goaly=${item.lat}`;
-  
-  let html = `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 Kakao Map Route</a>`;
-  if (IS_MOBILE) {
-    html += `<a class="detail-link detail-link--alt" href="${tmapUrl}">🚕 TMAP Route</a>`;
-  }
-  return html;
-}
-
+// 5. Utility & Sharing Functions
 function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
@@ -362,6 +354,33 @@ function copyToClipboard(text) {
   });
 }
 
+function executeShare(title, text, url) {
+  if (navigator.share) {
+    navigator.share({
+      title: title,
+      text: text,
+      url: url,
+    }).catch(() => {});
+  } else {
+    copyToClipboard(url).then(() => {
+      alert("Link copied to clipboard! Share it anywhere you like.");
+    });
+  }
+}
+
+function buildDirectionLinks(item) {
+  if (!item.lat || !item.lng) return "";
+  const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.nameKo || item.name)},${item.lat},${item.lng}`;
+  const tmapUrl = `tmap://route?goalname=${encodeURIComponent(item.nameKo || item.name)}&goalx=${item.lng}&goaly=${item.lat}`;
+  
+  let html = `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 Kakao Map Route</a>`;
+  if (IS_MOBILE) {
+    html += `<a class="detail-link detail-link--alt" href="${tmapUrl}">🚕 TMAP Route</a>`;
+  }
+  return html;
+}
+
+// 6. Detail Sheet & Modal Open
 function openDetail(item) {
   if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `
@@ -385,6 +404,7 @@ function openDetail(item) {
   `;
   els.detailSheet.hidden = false;
 
+  // Address Copy Button Event
   const copyBtn = document.getElementById("copyAddressBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
@@ -399,6 +419,18 @@ function openDetail(item) {
         });
     });
   }
+
+  // Share Button Event (Fixed)
+  const shareDetailBtn = document.getElementById("shareDetailBtn");
+  if (shareDetailBtn) {
+    shareDetailBtn.addEventListener("click", () => {
+      executeShare(
+        `[What to Eat in Gangneung] ${item.name}`,
+        `${item.name} (${item.category}) - ${item.menu}\nAddress: ${item.address}`,
+        window.location.href
+      );
+    });
+  }
 }
 
 if (els.detailClose) {
@@ -407,10 +439,21 @@ if (els.detailClose) {
   });
 }
 
-// 6. Initialization
+// 7. Initialization
 if (els.search) els.search.addEventListener("input", renderAll);
 if (els.starOnly) els.starOnly.addEventListener("change", renderAll);
 if (els.reviewOnly) els.reviewOnly.addEventListener("change", renderAll);
+
+const mainShareBtn = document.getElementById("mainShareBtn");
+if (mainShareBtn) {
+  mainShareBtn.addEventListener("click", () => {
+    executeShare(
+      "What to Eat in Gangneung — Local Food Map",
+      "Discover authentic local favorites instead of tourist traps!",
+      window.location.href
+    );
+  });
+}
 
 async function bootstrap() {
   initMap();

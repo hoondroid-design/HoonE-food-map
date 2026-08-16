@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (All Errors Handled)
+// What to Eat in Gangneung — app_en.js (Header-based Dynamic Parsing)
 // ============================================================
 
 const els = {
@@ -34,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. Fetch Google Sheet Data (Safe Parsing)
+// 1. Fetch Google Sheet Data (Header-matching logic)
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
   const ENGLISH_GID = "1598641787";
@@ -59,35 +59,77 @@ async function loadSheetData() {
 
   if (rows.length < 2) return [];
 
+  // 헤더명을 탐색하여 정확한 열 인덱스 자동 감지
+  let colIdx = {
+    star: -1,
+    category: -1,
+    menu: -1,
+    nameKo: -1,
+    nameEn: -1,
+    addressKo: -1,
+    addressEn: -1,
+    noteEn: -1,
+    visited: -1,
+    blog: -1
+  };
+
+  // 1번째 줄(헤더 행) 감지
+  for (let rowIdx = 0; rowIdx < Math.min(rows.length, 5); rowIdx++) {
+    const r = rows[rowIdx];
+    if (!r) continue;
+    r.forEach((cellVal, cIdx) => {
+      const headerStr = String(cellVal || "").trim().toLowerCase();
+      if (headerStr.includes("구분") || headerStr === "category") colIdx.category = cIdx;
+      if (headerStr.includes("featured menu")) colIdx.menu = cIdx;
+      if (headerStr.includes("name (ko)") || headerStr.includes("name(ko)")) colIdx.nameKo = cIdx;
+      if (headerStr.includes("name (en)") || headerStr.includes("name(en)")) colIdx.nameEn = cIdx;
+      if (headerStr.includes("address(ko)") || headerStr.includes("address (ko)")) colIdx.addressKo = cIdx;
+      if (headerStr.includes("address(en)") || headerStr.includes("address (en)")) colIdx.addressEn = cIdx;
+      if (headerStr.includes("owner's pick (en)") || headerStr.includes("pick (en)")) colIdx.noteEn = cIdx;
+      if (headerStr.includes("visited")) colIdx.visited = cIdx;
+      if (headerStr.includes("owner's review") || headerStr.includes("review")) colIdx.blog = cIdx;
+    });
+    if (colIdx.nameKo !== -1 || colIdx.nameEn !== -1) break;
+  }
+
+  // 헤더 탐색 실패 시 기본 위치 백업 지정
+  if (colIdx.category === -1) colIdx.category = 1;
+  if (colIdx.menu === -1) colIdx.menu = 2;
+  if (colIdx.nameKo === -1) colIdx.nameKo = 3;
+  if (colIdx.nameEn === -1) colIdx.nameEn = 4;
+  if (colIdx.addressKo === -1) colIdx.addressKo = 5;
+  if (colIdx.addressEn === -1) colIdx.addressEn = 6;
+  if (colIdx.noteEn === -1) colIdx.noteEn = 8;     // I열 (Owner's Pick En)
+  if (colIdx.visited === -1) colIdx.visited = 9;   // J열 (Visited in Person)
+  if (colIdx.blog === -1) colIdx.blog = 10;        // K열 (Owner's Review)
+
   const items = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !Array.isArray(r)) continue;
 
-    // 절대 에러나지 않는 안전한 안전장치 함수
-    const getCell = (idx) => (r[idx] !== undefined && r[idx] !== null) ? String(r[idx]).trim() : "";
+    const getCell = (c) => (c >= 0 && r[c] !== undefined && r[c] !== null) ? String(r[c]).trim() : "";
 
-    // 시트 인덱스 1:1 매핑 (A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9, K=10)
-    const starVal = getCell(0);
-    const category = getCell(1) || "Others";
-    const menu = getCell(2);
-    const nameKo = getCell(3);
-    const nameEn = getCell(4);
-    const addressKo = getCell(5);
-    const addressEn = getCell(6);
+    const starVal = getCell(colIdx.star);
+    const category = getCell(colIdx.category) || "Others";
+    const menu = getCell(colIdx.menu);
+    const nameKo = getCell(colIdx.nameKo);
+    const nameEn = getCell(colIdx.nameEn);
+    const addressKo = getCell(colIdx.addressKo);
+    const addressEn = getCell(colIdx.addressEn);
     
-    // I열 (Index 8): Owner's Pick (En) - 영문 한줄평
-    const noteEn = getCell(8);
+    // I열 영문 한줄 리뷰
+    const noteEn = getCell(colIdx.noteEn);
     
-    // J열 (Index 9): Visited in Person - 'O' 감지
-    const visitedRaw = getCell(9).toUpperCase();
-    const visited = (visitedRaw === "O" || visitedRaw === "0");
+    // J열 방문 여부 O 정밀 감지
+    const visitedRaw = getCell(colIdx.visited).toUpperCase();
+    const visited = (visitedRaw === "O" || visitedRaw === "0" || visitedRaw.includes("YES") || visitedRaw.includes("TRUE"));
     
-    // K열 (Index 10): Owner's Review - 블로그 링크
-    const blog = getCell(10);
+    // K열 블로그 링크
+    const blog = getCell(colIdx.blog);
 
     const displayName = nameEn || nameKo;
-    if (!displayName) continue; // 상호명이 둘 다 비어있으면 스킵
+    if (!displayName || displayName.toLowerCase().includes("name (en)")) continue;
 
     items.push({
       id: `${displayName}__${addressKo}`,
@@ -98,8 +140,8 @@ async function loadSheetData() {
       nameKo: nameKo,
       address: addressEn || addressKo,
       addressKo: addressKo,
-      note: noteEn,
-      visited: visited,
+      note: noteEn,             // 영문 한줄 리뷰
+      visited: visited,         // 방문 여부 감지 결과
       blog: blog,
       lat: null,
       lng: null,
@@ -376,7 +418,7 @@ function buildDirectionLinks(item) {
   return html;
 }
 
-// 6. Detail Sheet
+// 6. Detail Sheet Modal
 function openDetail(item) {
   if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-
 <html lang="ko">
-<meta charset="UTF-8" />
+<head>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ★ [네이버 소유확인 메타태그] 바로 여기에 넣으시면 됩니다! -->
+  <!-- ★ [네이버 소유확인 메타태그] -->
   <meta name="naver-site-verification" content="ac12bb9879a31a537812c9e55158ef425c6a7db9" />
 
-  <!-- 1. [검색엔진 SEO 최적화 메타태그] (구글, 네이버, 엣지 노출 핵심) -->
+  <!-- 1. [검색엔진 SEO 최적화 메타태그] -->
   <title>강릉 맛집 지도 | 현지인 추천 강릉 로컬 맛집 추천</title>
   <meta name="description" content="현지인 출신이 직접 만든 주관적 강릉 맛집 지도! 강릉 장칼국수, 중앙시장, 안목해변, 경포대 근처 진짜 강릉 로컬 맛집 리스트를 확인하세요." />
   <meta name="keywords" content="강릉맛집, 강릉맛집지도, 강릉로컬맛집, 강릉여행, 강릉장칼국수, 강릉현지인맛집, 강릉맛도리, 강릉로컬맛집정보, 강릉횟집, 강릉고기, 강릉생갈비, 강릉삼겹살, 강릉현지맛집, 강릉모임, 강릉회, 강릉술집, 강릉교동카페, 강릉카페, 강릉카페추천, 강릉대형카페, 강릉말차, 강릉말차로, 강릉빵집, 강릉중앙시장맛집, 강릉중앙시장" />
@@ -18,29 +18,27 @@
   <meta property="og:site_name" content="강릉 뭐먹지" />
   <meta property="og:title" content="강릉 뭐먹지-현지인 출신의 로컬 강릉 맛집 지도" />
   <meta property="og:description" content="100% 맛 보증 안함! 주관이 철저히 개입된 강릉 맛집지도" />
-  
-  <!-- 아래 og:image 경로에 업로드한 이미지 파일명을 적어줍니다 -->
-  <meta property="og:image" content="썸네일.png" />
+  <meta property="og:image" content="https://www.gangneungmatzip.com/thumbnail.png" />
   <meta property="og:url" content="https://www.gangneungmatzip.com" />
   
-<!-- 1. 파비콘: 깃허브에 올린 파일명(favicon.png)으로 교체 -->
-<link rel="icon" type="image/png" href="그림1.png" />
-<link rel="apple-touch-icon" href="그림1.png" />
+  <!-- 파비콘 -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="favicon.png" />
 
-<!-- 2. Google Analytics (GA4): G-XXXXXXXXXX 를 본인 ID로 교체 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-GLHEB5P95Z"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-GLHEB5P95Z');
-</script>
+  <!-- Google Analytics (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GLHEB5P95Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GLHEB5P95Z');
+  </script>
 
-<!-- Pretendard 고딕 폰트 -->
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-<link rel="stylesheet" href="style.css" />
+  <!-- Pretendard 고딕 폰트 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="style.css" />
 
-<!-- ★★★ [여기에 JSON-LD 구조화 데이터 삽입] ★★★ -->
+  <!-- ★★★ [JSON-LD 구조화 데이터] ★★★ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -70,8 +68,70 @@
     ]
   }
   </script>
+
+  <!-- 상단 배너 전용 인라인 스타일 (반응형 및 롤링 애니메이션) -->
+  <style>
+    /* 1. 상단 CTA 전용 스타일 */
+    .top-cta-bar {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 10px 16px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #eee;
+    }
+    .top-cta-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      transition: all 0.2s ease;
+    }
+    .top-cta-btn--primary {
+      background: #ff3b30;
+      color: #fff;
+      border: none;
+    }
+
+    /* 2. 검색창 상단 반응형 롤링배너 스타일 */
+    .top-search-banner {
+      width: 100%;
+      margin-bottom: 12px;
+      overflow: hidden;
+      border-radius: 12px;
+      position: relative;
+    }
+    .top-search-banner .banner-wrapper {
+      display: flex;
+      width: 300%; /* 3개 배너 전용 */
+      transition: transform 0.5s ease-in-out;
+    }
+    .top-search-banner .banner-item {
+      width: 33.333%;
+      flex-shrink: 0;
+      display: block;
+    }
+    .top-search-banner img {
+      width: 100%;
+      height: auto;
+      max-height: 120px; /* 모바일 대응 가로길이에 맞춘 수직 높이 제한 */
+      object-fit: cover;
+      display: block;
+      border-radius: 12px;
+    }
+  </style>
 </head>
 <body>
+
+<!-- ★ [추가 1] 최상단 북마크 / PWA 앱 저장 CTA 바 -->
+<div class="top-cta-bar">
+  <button type="button" class="top-cta-btn" onclick="addBookmark()">⭐ 즐겨찾기 추가</button>
+  <button type="button" class="top-cta-btn top-cta-btn--primary" onclick="showInstallGuide()">📱 폰 바탕화면에 저장</button>
+</div>
 
 <header class="site-header">
   <div class="header-inner">
@@ -79,10 +139,9 @@
       <span class="brand-eyebrow">SINCE 2017</span>
       <span class="brand-eyebrow">GANGNEUNG LOCAL GUIDE by HoonE</span>
       <h1>"넌 강릉가면 뭐먹어...?"</h1>
-<!-- intro-container 감싸기 -->
+      
       <div class="brand-sub intro-container">
         <b>Intro.</b><br>
-        <!-- 본문 텍스트를 p 태그로 감싸고 id="introText" 추가 -->
         <p id="introText" class="intro-text">
           2017년 언저리부터 서울 생활 시작, '강릉 출신'이라는 낙인 아닌 낙인 아래 "강릉 맛집은 어디냐"는 질문만 수백번 받은 듯 하다.
           약 25여년 이상 살아온 강릉에서 들락거렸던 카페, 식당, 술집들의 기억을 끌어 모아 구글 시트로 공유하다 AI 발전에 편승해 지금 이 상황까지 왔다.
@@ -91,20 +150,37 @@
           사람 입맛은 다 다르니까 판단은 본인이 직접 하길 바란다. 여기 있는 집들은 10년 이상된 곳들이 대다수인데, 사장님 바뀌면 맛도 분위기도 재료쓰는 것도 바뀌더라.
           아, 현재 여기에 후기 광고는 없다. 모두 직접 다녀왔다. 하지만 언젠가 광고로 돈좀 벌고 싶다(좀 많이)
         </p>
-        <!-- 모바일 전용 더보기 버튼 추가 -->
         <button type="button" id="moreBtn" class="more-btn" onclick="toggleIntro()">...더보기</button>
       </div>
-    <div class="header-meta">
-    <span id="totalCount" class="meta-pill">— 곳</span>
-  <!-- 메인 전체 공유 버튼 -->
-  <button type="button" class="meta-pill meta-pill--share" id="mainShareBtn">🔗 공유하기</button>
-  <span id="verDate" class="meta-pill meta-pill--muted"></span>
-</div>
+
+      <div class="header-meta">
+        <span id="totalCount" class="meta-pill">— 곳</span>
+        <button type="button" class="meta-pill meta-pill--share" id="mainShareBtn">🔗 공유하기</button>
+        <span id="verDate" class="meta-pill meta-pill--muted"></span>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="toolbar-wrapper">
   <div class="toolbar">
+
+    <!-- ★ [추가 2] 검색창 바로 상단 반응형 롤링배너 (최대 3개) -->
+    <div class="top-search-banner">
+      <div class="banner-wrapper" id="topBannerWrapper">
+        <a href="https://example.com/ad1" target="_blank" rel="noopener" class="banner-item">
+          <img src="광고배너-컨티뉴어스.png" alt="상단 광고 배너 1" onerror="this.src='https://via.placeholder.com/800x120/ff3b30/ffffff?text=Ad+Banner+1'" />
+        </a>
+        <a href="https://example.com/ad2" target="_blank" rel="noopener" class="banner-item">
+          <img src="그림4.png" alt="상단 광고 배너 2" onerror="this.src='https://via.placeholder.com/800x120/222222/ffffff?text=Ad+Banner+2'" />
+        </a>
+        <a href="https://example.com/ad3" target="_blank" rel="noopener" class="banner-item">
+          <img src="그림5.png" alt="상단 광고 배너 3" onerror="this.src='https://via.placeholder.com/800x120/008489/ffffff?text=Ad+Banner+3'" />
+        </a>
+      </div>
+    </div>
+
+    <!-- 검색창 -->
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="searchInput" type="text" placeholder="식당명, 메뉴, 동네로 검색 (예: 초당동, 막국수)" autocomplete="off" />
@@ -141,7 +217,7 @@
   <div id="detailBody"></div>
 </div>
 
-<!-- 롤링 광고 배너 영역 -->
+<!-- 하단 롤링 광고 배너 영역 -->
 <section class="banner-section">
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
@@ -162,21 +238,53 @@
 </section>
 
 <footer class="site-footer">
-  <P><b>⚠️확인하세요.</b>
+  <p><b>⚠️확인하세요.</b></p>
   <p>* 맛 평가는 상당히 주관적이므로 선택은 오로지 당신 몫!</p>
   <p>* 폐업된 곳이 있을 수 있으니, 방문 전 최신 정보를 네이버·카카오 등에서 한 번 더 확인.</p>
   <p>* 혹시 식당/카페 사장님이세요? 두툼한 광고비 대대대환영^^.</p>
-  <p class="copyright">
+  <div class="copyright">
     Copyright © 2026 HoonE. All rights reserved.<br />
     본 사이트의 디자인 및 오픈소스 코드를 제외한 창작 의도, 리뷰 등 작성된 모든 게시물의 저작권은 작성자에게 있습니다. 무단 도용 및 재배포, 편집을 엄격히 금지합니다.<br>
     <p>본 사이트는 Google Analytics 및 광고 서비스 제공을 위해 쿠키를 수집할 수 있습니다.</p>
-  </p>
+  </div>
 </footer>
 
-<!-- Kakao Maps SDK -->
+<!-- Kakao Maps SDK 및 스크립트 -->
 <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0470fb23303f174ae3f6cc6b82426f77&libraries=services"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
+
+<!-- ★ [동작 스크립트 1 & 2] 즐겨찾기/PWA 안내 및 검색창 상단 3초 자동 롤링배너 -->
+<script>
+  // 1. 북마크(즐겨찾기) 기능
+  function addBookmark() {
+    alert('Ctrl + D (Mac은 Cmd + D)를 누르시면 즐겨찾기에 등록됩니다.');
+  }
+
+  // 2. 폰 바탕화면에 저장(PWA) 안내 기능
+  function showInstallGuide() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+      alert('아이폰 저장 방법:\n1. 하단 중앙의 [공유 (⬆️)] 버튼 클릭\n2. [홈 화면에 추가 (+)] 선택!');
+    } else if (userAgent.includes('android')) {
+      alert('안드로이드 저장 방법:\n1. 상단 우측 [점 3개 (⋮)] 버튼 클릭\n2. [홈 화면에 추가] 선택!');
+    } else {
+      alert('스마트폰으로 접속 시 바탕화면에 앱처럼 저장하실 수 있습니다!');
+    }
+  }
+
+  // 3. 검색창 상단 배너 3초 간격 자동 롤링 (최대 3개)
+  let topBannerIndex = 0;
+  const topBannerWrapper = document.getElementById('topBannerWrapper');
+  const totalTopBanners = 3;
+
+  setInterval(() => {
+    topBannerIndex = (topBannerIndex + 1) % totalTopBanners;
+    if (topBannerWrapper) {
+      topBannerWrapper.style.transform = `translateX(-${topBannerIndex * 33.333}%)`;
+    }
+  }, 3000); // 3초마다 슬라이드
+</script>
 </body>
 </html>

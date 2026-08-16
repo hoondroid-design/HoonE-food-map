@@ -30,7 +30,7 @@ body {
 }
 
 /* ============================================================
-   ★ [신규] 최상단 즐겨찾기 & PWA 저장 CTA 바
+   ★ 최상단 즐겨찾기 & PWA 저장 CTA 바
 ============================================================= */
 .top-cta-bar {
   display: flex;
@@ -138,34 +138,69 @@ body {
 }
 
 /* ============================================================
-   ★ [신규] 검색창 상단 반응형 롤링 배너 (최대 3개)
+   ★ [수정완료] 검색창 상단 반응형 롤링 배너 (하단 배너 규격/버튼 통합)
 ============================================================= */
 .top-search-banner {
   width: 100%;
-  max-width: 100%;
   margin-bottom: 12px;
-  overflow: hidden; /* 영역을 벗어나는 2, 3번 배너 숨김 */
-  border-radius: var(--radius-md);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
   position: relative;
   box-shadow: var(--shadow-sm);
+  background: #e0e0e0;
+  aspect-ratio: 1000 / 180; /* 하단 배너와 100% 동일 규격 */
 }
+
 .top-search-banner .banner-wrapper {
   display: flex;
   width: 100%;
+  height: 100%;
   transition: transform 0.5s ease-in-out;
 }
+
 .top-search-banner .banner-item {
-  width: 100%; /* 슬라이드 1개당 프레임 크기를 100% 가득 채움 */
-  flex-shrink: 0; /* 화면 축소 시 이미지 찌그러짐 방지 */
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
   display: block;
 }
+
 .top-search-banner img {
   width: 100%;
-  height: auto;
-  max-height: 140px; /* PC/모바일에서 잘림 및 과도한 가로 확장 방지 */
+  height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: var(--radius-md);
+}
+
+/* 상단 배너 전용 화살표 버튼 & 도트 인디케이터 스타일 */
+.top-search-banner .banner-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+.top-search-banner .banner-btn.prev { left: 12px; }
+.top-search-banner .banner-btn.next { right: 12px; }
+
+.top-search-banner .banner-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 10;
 }
 
 .search-wrap { position: relative; flex: 1 1 280px; min-width: 220px; }
@@ -302,7 +337,7 @@ body {
 .list-item .row1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .list-item .name { font-weight: 700; font-size: 16px; color: var(--ink); }
 
-/* 별 아이콘 (카테고리 우측으로 이동) */
+/* 별 아이콘 */
 .star-badge { color: var(--star); font-size: 14px; margin-left: 2px; }
 
 /* 네이버 리뷰 유무 N 뱃지 */
@@ -456,6 +491,8 @@ body {
 .banner-slider { display: flex; width: 100%; height: 100%; transition: transform 0.4s ease-in-out; }
 .banner-slide { flex: 0 0 100%; width: 100%; height: 100%; display: block; }
 .banner-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 공통 배너 버튼 & 도트 스타일 (상/하단 공용) */
 .banner-btn {
   position: absolute;
   top: 50%;
@@ -545,8 +582,10 @@ body {
     display: inline-block;
   }
 
-  .top-search-banner img {
-    max-height: 100px; /* 모바일 전용 배너 높이 조절 */
+  .top-search-banner .banner-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
   }
 }
 

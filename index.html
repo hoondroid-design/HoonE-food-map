@@ -283,16 +283,59 @@
   }
 
   // 3. 검색창 상단 배너 3초 간격 자동 롤링 (최대 3개)
-  let topBannerIndex = 0;
-  const topBannerWrapper = document.getElementById('topBannerWrapper');
-  const totalTopBanners = 3;
+function initTopBanner() {
+    const wrapper = document.getElementById("topBannerWrapper");
+    if (!wrapper) return;
+    const items = wrapper.querySelectorAll(".banner-item");
+    const prevBtn = document.getElementById("topBannerPrev");
+    const nextBtn = document.getElementById("topBannerNext");
+    const dotsContainer = document.getElementById("topBannerDots");
 
-  setInterval(() => {
-    topBannerIndex = (topBannerIndex + 1) % totalTopBanners;
-    if (topBannerWrapper) {
-      topBannerWrapper.style.transform = `translateX(-${topBannerIndex * 33.333}%)`;
+    if (!items.length) return;
+
+    let currentIndex = 0;
+    let timer = null;
+
+    if (dotsContainer) {
+      dotsContainer.innerHTML = "";
+      items.forEach((_, idx) => {
+        const dot = document.createElement("div");
+        dot.className = "banner-dot" + (idx === 0 ? " active" : "");
+        dot.addEventListener("click", () => goToSlide(idx));
+        dotsContainer.appendChild(dot);
+      });
     }
-  }, 3000); // 3초마다 슬라이드
+
+    const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
+
+    function goToSlide(index) {
+      currentIndex = index;
+      if (currentIndex >= items.length) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = items.length - 1;
+
+      wrapper.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle("active", idx === currentIndex);
+      });
+      
+      resetTimer();
+    }
+
+    function nextSlide() { goToSlide(currentIndex + 1); }
+    function prevSlide() { goToSlide(currentIndex - 1); }
+
+    function startTimer() { timer = setInterval(nextSlide, 3500); }
+    function resetTimer() { clearInterval(timer); startTimer(); }
+
+    if (prevBtn) prevBtn.onclick = prevSlide;
+    if (nextBtn) nextBtn.onclick = nextSlide;
+
+    startTimer();
+  }
+
+  // 상단 배너 실행
+  initTopBanner();
 </script>
 </body>
 </html>

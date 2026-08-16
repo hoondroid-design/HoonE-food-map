@@ -13,7 +13,6 @@ const els = {
   reviewOnly: document.getElementById("reviewOnly"),
   totalCount: document.getElementById("totalCount"),
   visitCounter: document.getElementById("visitCounter"),
-  verDate: document.getElementById("verDate"),
   detailSheet: document.getElementById("detailSheet"),
   detailBody: document.getElementById("detailBody"),
   detailClose: document.getElementById("detailClose"),

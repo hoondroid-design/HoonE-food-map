@@ -7,7 +7,7 @@
   <!-- ★ [네이버 소유확인 메타태그] -->
   <meta name="naver-site-verification" content="ac12bb9879a31a537812c9e55158ef425c6a7db9" />
 
-  <!-- ★ [구글 애드센스 계정 인증 메타태그] 바로 여기에 넣으세요! -->
+  <!-- ★ [구글 애드센스 계정 인증 메타태그] -->
   <meta name="google-adsense-account" content="ca-pub-4761567002853346">
   
   <!-- 1. [검색엔진 SEO 최적화 메타태그] -->
@@ -41,7 +41,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="style.css" />
 
-  <!-- ★★★ [JSON-LD 구조화 데이터] ★★★ -->
+  <!-- ★ [JSON-LD 구조화 데이터] -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -71,66 +71,10 @@
     ]
   }
   </script>
-
-  <!-- 상단 배너 전용 인라인 스타일 (반응형 및 롤링 애니메이션) -->
-  <style>
-    /* 1. 상단 CTA 전용 스타일 */
-    .top-cta-bar {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      padding: 10px 16px;
-      background-color: #f8f9fa;
-      border-bottom: 1px solid #eee;
-    }
-    .top-cta-btn {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #333;
-      transition: all 0.2s ease;
-    }
-    .top-cta-btn--primary {
-      background: #ff3b30;
-      color: #fff;
-      border: none;
-    }
-
-    /* 2. 검색창 상단 반응형 롤링배너 스타일 */
-    .top-search-banner img {
-      width: 100%;
-      height: auto;
-      object-fit: contain; /* 잘림 없이 이미지 전체가 보이도록 설정 */
-      display: block;
-      border-radius: 12px;
-    }
-    .top-search-banner .banner-wrapper {
-      display: flex;
-      width: 300%; /* 3개 배너 전용 */
-      transition: transform 0.5s ease-in-out;
-    }
-    .top-search-banner .banner-item {
-      width: 33.333%;
-      flex-shrink: 0;
-      display: block;
-    }
-    .top-search-banner img {
-      width: 100%;
-      height: auto;
-      max-height: 120px; /* 모바일 대응 가로길이에 맞춘 수직 높이 제한 */
-      object-fit: cover;
-      display: block;
-      border-radius: 12px;
-    }
-  </style>
 </head>
 <body>
 
-<!-- ★ [추가 1] 최상단 북마크 / PWA 앱 저장 CTA 바 -->
+<!-- 최상단 북마크 / PWA 앱 저장 CTA 바 -->
 <div class="top-cta-bar">
   <button type="button" class="top-cta-btn" onclick="addBookmark()">⭐ 즐겨찾기 추가</button>
   <button type="button" class="top-cta-btn top-cta-btn--primary" onclick="showInstallGuide()">📱 폰 바탕화면에 저장</button>
@@ -159,35 +103,33 @@
       <div class="header-meta">
         <span id="totalCount" class="meta-pill">— 곳</span>
         <button type="button" class="meta-pill meta-pill--share" id="mainShareBtn">🔗 공유하기</button>
-        
       </div>
     </div>
   </div>
 </header>
 
+<!-- ★ [신규 상단 배너 전용 섹션] 하단 배너와 100% 동일 규격/방식 적용 -->
+<section class="banner-section" style="margin: 20px auto 0;">
+  <div class="banner-container">
+    <div class="banner-slider" id="topBannerSlider">
+      <a href="https://litt.ly/continuous_live" target="_blank" rel="noopener" class="banner-slide">
+        <img src="광고배너-컨티뉴어스.png" alt="상단 광고 배너 1" onerror="this.src='https://via.placeholder.com/1000x180/ff3b30/ffffff?text=Ad+Banner+1+(1000x180)'" />
+      </a>
+      <a href="https://example.com/ad2" target="_blank" rel="noopener" class="banner-slide">
+        <img src="그림4.png" alt="상단 광고 배너 2" onerror="this.src='https://via.placeholder.com/1000x180/222222/ffffff?text=Ad+Banner+2+(1000x180)'" />
+      </a>
+      <a href="https://example.com/ad3" target="_blank" rel="noopener" class="banner-slide">
+        <img src="그림5.png" alt="상단 광고 배너 3" onerror="this.src='https://via.placeholder.com/1000x180/008489/ffffff?text=Ad+Banner+3+(1000x180)'" />
+      </a>
+    </div>
+    <button class="banner-btn prev" id="topBannerPrev" aria-label="이전 배너">❮</button>
+    <button class="banner-btn next" id="topBannerNext" aria-label="다음 배너">❯</button>
+    <div class="banner-dots" id="topBannerDots"></div>
+  </div>
+</section>
+
 <div class="toolbar-wrapper">
   <div class="toolbar">
-
-    <!-- ★ [추가 2] 검색창 바로 상단 반응형 롤링배너 (최대 3개) -->
-<div class="top-search-banner">
-  <div class="banner-wrapper" id="topBannerWrapper">
-    <a href="https://litt.ly/continuous_live" target="_blank" rel="noopener" class="banner-item">
-      <img src="광고배너-컨티뉴어스.png" alt="상단 광고 배너 1" onerror="this.src='https://via.placeholder.com/800x120/ff3b30/ffffff?text=Ad+Banner+1'" />
-    </a>
-    <a href="https://example.com/ad2" target="_blank" rel="noopener" class="banner-item">
-      <img src="그림4.png" alt="상단 광고 배너 2" onerror="this.src='https://via.placeholder.com/800x120/222222/ffffff?text=Ad+Banner+2'" />
-    </a>
-    <a href="https://example.com/ad3" target="_blank" rel="noopener" class="banner-item">
-      <img src="그림5.png" alt="상단 광고 배너 3" onerror="this.src='https://via.placeholder.com/800x120/008489/ffffff?text=Ad+Banner+3'" />
-    </a>
-  </div>
-
-  <!-- ★ 좌/우 버튼 & 도트 추가 -->
-  <button class="banner-btn prev" id="topBannerPrev" aria-label="이전 배너">❮</button>
-  <button class="banner-btn next" id="topBannerNext" aria-label="다음 배너">❯</button>
-  <div class="banner-dots" id="topBannerDots"></div>
-</div>
-
     <!-- 검색창 -->
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -230,7 +172,7 @@
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
       <a href="https://litt.ly/continuous_live" target="_blank" rel="noopener" class="banner-slide">
-        <img src="광고배너-컨티뉴어스.png" alt="광고 배너 1" onerror="this.src='https://via.placeholder.com/1000x180/222222/ffffff?text=Banner+2+(1000x180)'"/>
+        <img src="광고배너-컨티뉴어스.png" alt="광고 배너 1" onerror="this.src='https://via.placeholder.com/1000x180/222222/ffffff?text=Banner+1+(1000x180)'"/>
       </a>
       <a href="https://example.com/link2" target="_blank" rel="noopener" class="banner-slide">
         <img src="그림4.png" alt="광고 배너 2" onerror="this.src='https://via.placeholder.com/1000x180/222222/ffffff?text=Banner+2+(1000x180)'" />
@@ -263,7 +205,7 @@
 <script src="config.js"></script>
 <script src="app.js"></script>
 
-<!-- ★ [동작 스크립트 1 & 2] 즐겨찾기/PWA 안내 및 검색창 상단 3초 자동 롤링배너 -->
+<!-- 동작 스크립트 -->
 <script>
   // 1. 북마크(즐겨찾기) 기능
   function addBookmark() {
@@ -282,59 +224,60 @@
     }
   }
 
-  // 3. 검색창 상단 배너 3초 간격 자동 롤링 (최대 3개)
-function initTopBanner() {
-  const wrapper = document.getElementById("topBannerWrapper");
-  if (!wrapper) return;
-  const items = wrapper.querySelectorAll(".banner-item");
-  const prevBtn = document.getElementById("topBannerPrev");
-  const nextBtn = document.getElementById("topBannerNext");
-  const dotsContainer = document.getElementById("topBannerDots");
+  // 3. ★ [수정완료] 상단 배너 4초 자동 롤링 및 클릭 제어 (하단 배너와 100% 동일 방식)
+  function initTopBanner() {
+    const slider = document.getElementById("topBannerSlider");
+    if (!slider) return;
+    const slides = slider.querySelectorAll(".banner-slide");
+    const prevBtn = document.getElementById("topBannerPrev");
+    const nextBtn = document.getElementById("topBannerNext");
+    const dotsContainer = document.getElementById("topBannerDots");
 
-  if (!items.length) return;
+    if (!slides.length) return;
 
-  let currentIndex = 0;
-  let timer = null;
+    let currentIndex = 0;
+    let timer = null;
 
-  // 도트 인디케이터 생성
-  if (dotsContainer) {
-    dotsContainer.innerHTML = "";
-    items.forEach((_, idx) => {
-      const dot = document.createElement("div");
-      dot.className = "banner-dot" + (idx === 0 ? " active" : "");
-      dot.addEventListener("click", () => goToSlide(idx));
-      dotsContainer.appendChild(dot);
-    });
+    if (dotsContainer) {
+      dotsContainer.innerHTML = "";
+      slides.forEach((_, idx) => {
+        const dot = document.createElement("div");
+        dot.className = "banner-dot" + (idx === 0 ? " active" : "");
+        dot.addEventListener("click", () => goToSlide(idx));
+        dotsContainer.appendChild(dot);
+      });
+    }
+
+    const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
+
+    function goToSlide(index) {
+      currentIndex = index;
+      if (currentIndex >= slides.length) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = slides.length - 1;
+
+      slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle("active", idx === currentIndex);
+      });
+      
+      resetTimer();
+    }
+
+    function nextSlide() { goToSlide(currentIndex + 1); }
+    function prevSlide() { goToSlide(currentIndex - 1); }
+
+    function startTimer() { timer = setInterval(nextSlide, 4000); }
+    function resetTimer() { clearInterval(timer); startTimer(); }
+
+    if (prevBtn) prevBtn.onclick = prevSlide;
+    if (nextBtn) nextBtn.onclick = nextSlide;
+
+    startTimer();
   }
 
-  const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
-
-  function goToSlide(index) {
-    currentIndex = index;
-    if (currentIndex >= items.length) currentIndex = 0;
-    if (currentIndex < 0) currentIndex = items.length - 1;
-
-    // 배너 1장당 exact -100%씩만 이동 (배너 이어짐 방지)
-    wrapper.style.transform = `translateX(-${currentIndex * 100}%)`;
-
-    dots.forEach((dot, idx) => {
-      dot.classList.toggle("active", idx === currentIndex);
-    });
-    
-    resetTimer();
-  }
-
-  function nextSlide() { goToSlide(currentIndex + 1); }
-  function prevSlide() { goToSlide(currentIndex - 1); }
-
-  function startTimer() { timer = setInterval(nextSlide, 3500); }
-  function resetTimer() { clearInterval(timer); startTimer(); }
-
-  if (prevBtn) prevBtn.onclick = prevSlide;
-  if (nextBtn) nextBtn.onclick = nextSlide;
-
-  startTimer();
-}
+  // 상단 배너 로직 즉시 실행
+  initTopBanner();
 </script>
 </body>
 </html>

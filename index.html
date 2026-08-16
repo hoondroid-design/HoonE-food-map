@@ -284,58 +284,57 @@
 
   // 3. 검색창 상단 배너 3초 간격 자동 롤링 (최대 3개)
 function initTopBanner() {
-    const wrapper = document.getElementById("topBannerWrapper");
-    if (!wrapper) return;
-    const items = wrapper.querySelectorAll(".banner-item");
-    const prevBtn = document.getElementById("topBannerPrev");
-    const nextBtn = document.getElementById("topBannerNext");
-    const dotsContainer = document.getElementById("topBannerDots");
+  const wrapper = document.getElementById("topBannerWrapper");
+  if (!wrapper) return;
+  const items = wrapper.querySelectorAll(".banner-item");
+  const prevBtn = document.getElementById("topBannerPrev");
+  const nextBtn = document.getElementById("topBannerNext");
+  const dotsContainer = document.getElementById("topBannerDots");
 
-    if (!items.length) return;
+  if (!items.length) return;
 
-    let currentIndex = 0;
-    let timer = null;
+  let currentIndex = 0;
+  let timer = null;
 
-    if (dotsContainer) {
-      dotsContainer.innerHTML = "";
-      items.forEach((_, idx) => {
-        const dot = document.createElement("div");
-        dot.className = "banner-dot" + (idx === 0 ? " active" : "");
-        dot.addEventListener("click", () => goToSlide(idx));
-        dotsContainer.appendChild(dot);
-      });
-    }
-
-    const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
-
-    function goToSlide(index) {
-      currentIndex = index;
-      if (currentIndex >= items.length) currentIndex = 0;
-      if (currentIndex < 0) currentIndex = items.length - 1;
-
-      wrapper.style.transform = `translateX(-${currentIndex * 100}%)`;
-
-      dots.forEach((dot, idx) => {
-        dot.classList.toggle("active", idx === currentIndex);
-      });
-      
-      resetTimer();
-    }
-
-    function nextSlide() { goToSlide(currentIndex + 1); }
-    function prevSlide() { goToSlide(currentIndex - 1); }
-
-    function startTimer() { timer = setInterval(nextSlide, 3500); }
-    function resetTimer() { clearInterval(timer); startTimer(); }
-
-    if (prevBtn) prevBtn.onclick = prevSlide;
-    if (nextBtn) nextBtn.onclick = nextSlide;
-
-    startTimer();
+  // 도트 인디케이터 생성
+  if (dotsContainer) {
+    dotsContainer.innerHTML = "";
+    items.forEach((_, idx) => {
+      const dot = document.createElement("div");
+      dot.className = "banner-dot" + (idx === 0 ? " active" : "");
+      dot.addEventListener("click", () => goToSlide(idx));
+      dotsContainer.appendChild(dot);
+    });
   }
 
-  // 상단 배너 실행
-  initTopBanner();
+  const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
+
+  function goToSlide(index) {
+    currentIndex = index;
+    if (currentIndex >= items.length) currentIndex = 0;
+    if (currentIndex < 0) currentIndex = items.length - 1;
+
+    // 배너 1장당 exact -100%씩만 이동 (배너 이어짐 방지)
+    wrapper.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === currentIndex);
+    });
+    
+    resetTimer();
+  }
+
+  function nextSlide() { goToSlide(currentIndex + 1); }
+  function prevSlide() { goToSlide(currentIndex - 1); }
+
+  function startTimer() { timer = setInterval(nextSlide, 3500); }
+  function resetTimer() { clearInterval(timer); startTimer(); }
+
+  if (prevBtn) prevBtn.onclick = prevSlide;
+  if (nextBtn) nextBtn.onclick = nextSlide;
+
+  startTimer();
+}
 </script>
 </body>
 </html>

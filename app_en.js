@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (English Version)
+// What to Eat in Gangneung — app_en.js (Safe Error-Free Version)
 // ============================================================
 
 const els = {
@@ -38,7 +38,7 @@ function saveCoordCache(cache) {
 // 1. Fetch Google Sheet CSV (Using English Sheet GID: 1598641787)
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
-  const ENGLISH_GID = "1598641787"; // English Sheet GID
+  const ENGLISH_GID = "1598641787";
   const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
   const params = new URLSearchParams({
     tqx: "out:csv",
@@ -52,43 +52,41 @@ async function loadSheetData() {
   const url = buildSheetUrl();
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Failed to load sheet data (HTTP ${res.status}). Check sheet permissions.`);
+    throw new Error(`Failed to load sheet data (HTTP ${res.status}).`);
   }
   const csvText = await res.text();
   const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
-  const rows = parsed.data;
+  const rows = parsed.data || [];
 
   const items = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    if (!r || r.length < 4) continue;
+    if (!r || !Array.isArray(r) || r.length < 3) continue;
     
-    // 이미지 열 매핑 기준
-    // A: Category(En), B: Menu(En), C: Name(Ko), D: Name(En), E: Address(Ko), F: Address(En), G: Pick(Ko), H: Pick(En), I: Visited, J: Review
-    const category = (r[0] || "").trim() || "Others";
-    const menu = (r[1] || "").trim();
-    const nameKo = (r[2] || "").trim();
-    const nameEn = (r[3] || "").trim();
-    const addressKo = (r[4] || "").trim();
-    const addressEn = (r[5] || "").trim();
-    const noteEn = (r[7] || "").trim();
-    const visited = (r[8] || "").trim() === "O";
-    const blog = (r[9] || "").trim();
+    // Safety guard against undefined values
+    const category = String(r[0] || "").trim() || "Others";
+    const menu = String(r[1] || "").trim();
+    const nameKo = String(r[2] || "").trim();
+    const nameEn = String(r[3] || "").trim();
+    const addressKo = String(r[4] || "").trim();
+    const addressEn = String(r[5] || "").trim();
+    const noteEn = String(r[7] || "").trim();
+    const visited = String(r[8] || "").trim() === "O";
+    const blog = String(r[9] || "").trim();
 
-    // 메인 표시 이름은 영문, 없으면 한글 사용
     const displayName = nameEn || nameKo;
     if (!displayName) continue;
 
     items.push({
       id: `${displayName}__${addressKo}`,
-      starred: false, // 별점 항목이 시트에 없으므로 기본값 false
+      starred: false,
       category: category,
       menu: menu,
-      name: displayName,        // 메인 상호명 (영문)
-      nameKo: nameKo,           // 보조 상호명 (한글)
-      address: addressEn || addressKo, // 화면 표시용 주소 (영문)
-      addressKo: addressKo,     // 지도 검색용 주소 (한글)
-      note: noteEn,             // 한줄평 (영문)
+      name: displayName,
+      nameKo: nameKo,
+      address: addressEn || addressKo,
+      addressKo: addressKo,
+      note: noteEn,
       visited: visited,
       blog: blog,
       lat: null,
@@ -98,9 +96,10 @@ async function loadSheetData() {
   return items;
 }
 
-// 2. Kakao Geocoding & Search
+// 2. Geocoding
 function geocodeAddressOnce(address) {
   return new Promise((resolve) => {
+    if (!geocoder || !address) return resolve(null);
     geocoder.addressSearch(address, (result, status) => {
       if (status === kakao.maps.services.Status.OK && result.length > 0) {
         resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
@@ -113,6 +112,7 @@ function geocodeAddressOnce(address) {
 
 function keywordSearchOnce(query) {
   return new Promise((resolve) => {
+    if (!places || !query) return resolve(null);
     places.keywordSearch(query, (result, status) => {
       if (status === kakao.maps.services.Status.OK && result.length > 0) {
         resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
@@ -143,11 +143,11 @@ async function resolveCoordinates(items) {
   renderMapStatus(resolvedCount, items.length, toLookup.length > 0);
 
   for (const it of toLookup) {
-  let coord = null;
+    let coord = null;
     if (it.addressKo) {
       coord = await geocodeAddressOnce(it.addressKo);
     }
-    if (!coord) {
+    if (!coord && it.nameKo) {
       coord = await keywordSearchOnce(`강릉 ${it.addressKo} ${it.nameKo}`.trim())
         || await keywordSearchOnce(`강릉 ${it.nameKo}`);
     }
@@ -176,7 +176,7 @@ function renderMapStatus(resolved, total, loading) {
 
 // 3. Map & Marker Controls
 function initMap() {
-  if (!els.map) return;
+  if (!els.map || typeof kakao === "undefined" || !kakao.maps) return;
   map = new kakao.maps.Map(els.map, {
     center: new kakao.maps.LatLng(CONFIG.MAP_CENTER.lat, CONFIG.MAP_CENTER.lng),
     level: CONFIG.MAP_LEVEL,
@@ -186,7 +186,7 @@ function initMap() {
 }
 
 function addOrUpdateMarker(item) {
-  if (!item.lat || !item.lng || markers[item.id]) return;
+  if (!map || !item.lat || !item.lng || markers[item.id]) return;
   const pos = new kakao.maps.LatLng(item.lat, item.lng);
 
   const marker = new kakao.maps.Marker({ position: pos, map: map });
@@ -224,10 +224,12 @@ function applyVisibility(item, visible) {
   if (o) o.setMap(visible ? map : null);
 }
 
-// 4. List & Categories
+// 4. Category Chips & List
 function renderChips(items) {
   if (!els.chips) return;
-  const cats = ["All", ...Array.from(new Set(items.map((i) => i.category)))];
+  const rawCats = items.map((i) => i.category).filter(Boolean);
+  const cats = ["All", ...Array.from(new Set(rawCats))];
+  
   els.chips.innerHTML = "";
   cats.forEach((cat) => {
     const btn = document.createElement("button");
@@ -251,6 +253,7 @@ function isItemVisible(item) {
   const matchesQuery =
     !q ||
     item.name.toLowerCase().includes(q) ||
+    item.nameKo.toLowerCase().includes(q) ||
     item.menu.toLowerCase().includes(q) ||
     item.address.toLowerCase().includes(q) ||
     item.note.toLowerCase().includes(q);
@@ -277,8 +280,7 @@ function renderList(items) {
       <span class="idx">no.${String(idx + 1).padStart(3, "0")}</span>
       <div class="body">
         <div class="row1">
-          <!-- 영문 상호명 메인 표시 + 한글 상호명 보조 표시 -->
-          <span class="name">${escapeHtml(item.name)} <small style="font-weight:normal; font-size:13px; color:#888;">(${escapeHtml(item.nameKo)})</small></span>
+          <span class="name">${escapeHtml(item.name)} <small style="font-weight:normal; font-size:12px; color:#888;">(${escapeHtml(item.nameKo)})</small></span>
           <span class="tag">${escapeHtml(item.category)}</span>
           ${reviewBadge}
         </div>
@@ -290,7 +292,7 @@ function renderList(items) {
 
     li.addEventListener("click", () => {
       openDetail(item);
-      if (item.lat && item.lng) {
+      if (map && item.lat && item.lng) {
         map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
       }
     });
@@ -300,7 +302,52 @@ function renderList(items) {
   ALL_ITEMS.forEach((item) => applyVisibility(item, isItemVisible(item)));
 }
 
-// 상세페이지 팝업 렌더링 부분
+function renderAll() {
+  renderList(ALL_ITEMS);
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// 5. Detail Sheet
+function buildDirectionLinks(item) {
+  if (!item.lat || !item.lng) return "";
+  const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.nameKo || item.name)},${item.lat},${item.lng}`;
+  const tmapUrl = `tmap://route?goalname=${encodeURIComponent(item.nameKo || item.name)}&goalx=${item.lng}&goaly=${item.lat}`;
+  
+  let html = `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 Kakao Map Route</a>`;
+  if (IS_MOBILE) {
+    html += `<a class="detail-link detail-link--alt" href="${tmapUrl}">🚕 TMAP Route</a>`;
+  }
+  return html;
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 function openDetail(item) {
   if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `
@@ -324,7 +371,6 @@ function openDetail(item) {
   `;
   els.detailSheet.hidden = false;
 
-  // 주소 복사 버튼 누르면 카카오 택시나 내비에 치기 좋게 '한글 주소'가 복사되도록 설정
   const copyBtn = document.getElementById("copyAddressBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
@@ -341,166 +387,19 @@ function openDetail(item) {
   }
 }
 
-  const shareDetailBtn = document.getElementById("shareDetailBtn");
-  if (shareDetailBtn) {
-    shareDetailBtn.addEventListener("click", () => {
-      executeShare(
-        `[What to Eat in Gangneung] ${item.name}`,
-        `${item.name} (${item.category}) - ${item.menu}\nAddress: ${item.address}`,
-        window.location.href,
-        item.name
-      );
-    });
-  }
-
-  logClick(item.name);
-}
-
 if (els.detailClose) {
   els.detailClose.addEventListener("click", () => {
     if (els.detailSheet) els.detailSheet.hidden = true;
   });
 }
 
-function logClick(restaurantName) {
-  const url = CONFIG.CLICK_LOG_URL;
-  if (!url || !restaurantName) return;
-  
-  const query = new URLSearchParams({
-    type: "click",
-    name: restaurantName
-  }).toString();
-  
-  fetch(`${url}?${query}`, { mode: "no-cors" }).catch(() => {});
-}
-
-function logShare(targetName = "EntireSite") {
-  const url = CONFIG.CLICK_LOG_URL;
-  if (!url) return;
-  
-  const params = new URLSearchParams({
-    type: "share",
-    target: targetName
-  }).toString();
-  
-  fetch(`${url}?${params}`, { mode: "no-cors" }).catch(() => {});
-}
-
-function executeShare(title, text, url, targetName) {
-  if (navigator.share) {
-    navigator.share({
-      title: title,
-      text: text,
-      url: url,
-    }).then(() => {
-      logShare(targetName);
-    }).catch(() => {});
-  } else {
-    copyToClipboard(url).then(() => {
-      alert("Link copied to clipboard! Share it anywhere you like.");
-      logShare(targetName);
-    });
-  }
-}
-
-const VISITOR_ID_KEY = "gnfood_visitor_id";
-const LAST_VISIT_DATE_KEY = "gnfood_last_visit_date";
-
-async function trackVisit() {
-  const url = CONFIG.CLICK_LOG_URL;
-  if (!url) return;
-
-  let visitorId = localStorage.getItem(VISITOR_ID_KEY);
-  const isNewVisitor = !visitorId;
-  if (isNewVisitor) {
-    visitorId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    localStorage.setItem(VISITOR_ID_KEY, visitorId);
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const isNewToday = localStorage.getItem(LAST_VISIT_DATE_KEY) !== today;
-  if (isNewToday) localStorage.setItem(LAST_VISIT_DATE_KEY, today);
-
-  const params = new URLSearchParams({
-    type: "visit",
-    newVisitor: isNewVisitor ? "1" : "0",
-    newToday: isNewToday ? "1" : "0",
-  });
-
-  fetch(`${url}?${params.toString()}`, { mode: "no-cors" }).catch(() => {});
-}
-
-function initBannerSlider() {
-  const slider = document.getElementById("bannerSlider");
-  if (!slider) return;
-  const slides = slider.querySelectorAll(".banner-slide");
-  const prevBtn = document.getElementById("bannerPrev");
-  const nextBtn = document.getElementById("bannerNext");
-  const dotsContainer = document.getElementById("bannerDots");
-
-  if (!slides.length) return;
-
-  let currentIndex = 0;
-  let timer = null;
-
-  if (dotsContainer) {
-    dotsContainer.innerHTML = "";
-    slides.forEach((_, idx) => {
-      const dot = document.createElement("div");
-      dot.className = "banner-dot" + (idx === 0 ? " active" : "");
-      dot.addEventListener("click", () => goToSlide(idx));
-      dotsContainer.appendChild(dot);
-    });
-  }
-
-  const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
-
-  function goToSlide(index) {
-    currentIndex = index;
-    if (currentIndex >= slides.length) currentIndex = 0;
-    if (currentIndex < 0) currentIndex = slides.length - 1;
-
-    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-
-    dots.forEach((dot, idx) => {
-      dot.classList.toggle("active", idx === currentIndex);
-    });
-    
-    resetTimer();
-  }
-
-  function nextSlide() { goToSlide(currentIndex + 1); }
-  function prevSlide() { goToSlide(currentIndex - 1); }
-
-  function startTimer() { timer = setInterval(nextSlide, 4000); }
-  function resetTimer() { clearInterval(timer); startTimer(); }
-
-  if (prevBtn) prevBtn.onclick = prevSlide;
-  if (nextBtn) nextBtn.onclick = nextSlide;
-
-  startTimer();
-}
-
+// 6. Initialization
 if (els.search) els.search.addEventListener("input", renderAll);
 if (els.starOnly) els.starOnly.addEventListener("change", renderAll);
 if (els.reviewOnly) els.reviewOnly.addEventListener("change", renderAll);
 
-const mainShareBtn = document.getElementById("mainShareBtn");
-if (mainShareBtn) {
-  mainShareBtn.addEventListener("click", () => {
-    executeShare(
-      "What to Eat in Gangneung — Local Food Map",
-      "Discover authentic local favorites instead of tourist traps!",
-      window.location.href,
-      "EntireSite"
-    );
-  });
-}
-
 async function bootstrap() {
   initMap();
-  trackVisit();
-  initBannerSlider();
 
   try {
     ALL_ITEMS = await loadSheetData();

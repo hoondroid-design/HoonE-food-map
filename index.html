@@ -98,12 +98,12 @@
     }
 
     /* 2. 검색창 상단 반응형 롤링배너 스타일 */
-    .top-search-banner {
+    .top-search-banner img {
       width: 100%;
-      margin-bottom: 12px;
-      overflow: hidden;
+      height: auto;
+      object-fit: contain; /* 잘림 없이 이미지 전체가 보이도록 설정 */
+      display: block;
       border-radius: 12px;
-      position: relative;
     }
     .top-search-banner .banner-wrapper {
       display: flex;
@@ -168,7 +168,7 @@
     <!-- ★ [추가 2] 검색창 바로 상단 반응형 롤링배너 (최대 3개) -->
     <div class="top-search-banner">
       <div class="banner-wrapper" id="topBannerWrapper">
-        <a href="https://example.com/ad1" target="_blank" rel="noopener" class="banner-item">
+        <a href="https://litt.ly/continuous_live" target="_blank" rel="noopener" class="banner-item">
           <img src="광고배너-컨티뉴어스.png" alt="상단 광고 배너 1" onerror="this.src='https://via.placeholder.com/800x120/ff3b30/ffffff?text=Ad+Banner+1'" />
         </a>
         <a href="https://example.com/ad2" target="_blank" rel="noopener" class="banner-item">

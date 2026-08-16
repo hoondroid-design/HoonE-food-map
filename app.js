@@ -1,5 +1,5 @@
 // ============================================================
-// 강릉 뭐먹지 — app.js (공유하기 카운팅 기능 포함)
+// 강릉 뭐먹지 — app.js (지도 및 맛집 리스트 로딩 오류 수정본)
 // ============================================================
 
 const els = {
@@ -16,6 +16,7 @@ const els = {
   detailSheet: document.getElementById("detailSheet"),
   detailBody: document.getElementById("detailBody"),
   detailClose: document.getElementById("detailClose"),
+  // verDate를 지웠으므로 에러 방지를 위해 안전하게 null 처리만 유지
 };
 
 let ALL_ITEMS = [];      
@@ -48,13 +49,6 @@ function buildSheetUrl() {
   return `${base}?${params.toString()}`;
 }
 
-async function fetchLastUpdatedDate() {
-  // 구글 시트 웹페이지 직접 fetch 요청 시 발생하는 CORS/Preload 블로킹을 방지하기 위해 
-  // 오늘 날짜 기준으로 안전하게 표시합니다.
-  const now = new Date();
-  return `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} 업데이트`;
-}
-
 async function loadSheetData() {
   const url = buildSheetUrl();
   const res = await fetch(url);
@@ -82,7 +76,7 @@ async function loadSheetData() {
       category: (category || "").trim() || "기타",
       menu: (menu || "").trim(),
       name: name.trim(),
-      address: cleanAddress, // E열 주소
+      address: cleanAddress,
       note: (note || "").trim(),
       visited: (visited || "").trim() === "O",
       blog: (blog || "").trim(),
@@ -162,6 +156,7 @@ async function resolveCoordinates(items) {
 }
 
 function renderMapStatus(resolved, total, loading) {
+  if (!els.mapStatus) return;
   const failed = total - resolved;
   els.mapStatus.textContent = loading
     ? `위치 확인 중… (${resolved}/${total})`
@@ -170,6 +165,7 @@ function renderMapStatus(resolved, total, loading) {
 
 // 3. 지도 및 마커 제어
 function initMap() {
+  if (!els.map) return;
   map = new kakao.maps.Map(els.map, {
     center: new kakao.maps.LatLng(CONFIG.MAP_CENTER.lat, CONFIG.MAP_CENTER.lng),
     level: CONFIG.MAP_LEVEL,
@@ -219,6 +215,7 @@ function applyVisibility(item, visible) {
 
 // 4. 식당 목록 및 카테고리
 function renderChips(items) {
+  if (!els.chips) return;
   const cats = ["전체", ...Array.from(new Set(items.map((i) => i.category)))];
   els.chips.innerHTML = "";
   cats.forEach((cat) => {
@@ -239,7 +236,7 @@ function renderChips(items) {
 }
 
 function isItemVisible(item) {
-  const q = els.search.value.trim().toLowerCase();
+  const q = els.search ? els.search.value.trim().toLowerCase() : "";
   const matchesQuery =
     !q ||
     item.name.toLowerCase().includes(q) ||
@@ -247,18 +244,17 @@ function isItemVisible(item) {
     item.address.toLowerCase().includes(q) ||
     item.note.toLowerCase().includes(q);
   const matchesCategory = CURRENT_CATEGORY === "전체" || item.category === CURRENT_CATEGORY;
-  const matchesStar = !els.starOnly.checked || item.starred;
-  
-  // N 리뷰(블로그 링크)가 존재하는 항목만 필터링
-  const matchesReview = !els.reviewOnly.checked || !!(item.blog && item.blog.trim());
+  const matchesStar = !els.starOnly || !els.starOnly.checked || item.starred;
+  const matchesReview = !els.reviewOnly || !els.reviewOnly.checked || !!(item.blog && item.blog.trim());
 
   return matchesQuery && matchesCategory && matchesStar && matchesReview;
 }
 
 function renderList(items) {
+  if (!els.list) return;
   const visible = items.filter(isItemVisible);
   els.list.innerHTML = "";
-  els.emptyState.hidden = visible.length > 0;
+  if (els.emptyState) els.emptyState.hidden = visible.length > 0;
 
   visible.forEach((item, idx) => {
     const li = document.createElement("li");
@@ -340,6 +336,7 @@ function copyToClipboard(text) {
 }
 
 function openDetail(item) {
+  if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `
     <div class="detail-eyebrow">${escapeHtml(item.category)} · ${escapeHtml(item.menu)}</div>
     <div class="detail-title">${item.starred ? "★ " : ""}${escapeHtml(item.name)}</div>
@@ -379,7 +376,6 @@ function openDetail(item) {
     });
   }
 
-  // 식당 상세 공유 버튼
   const shareDetailBtn = document.getElementById("shareDetailBtn");
   if (shareDetailBtn) {
     shareDetailBtn.addEventListener("click", () => {
@@ -395,14 +391,16 @@ function openDetail(item) {
   logClick(item.name);
 }
 
-els.detailClose.addEventListener("click", () => {
-  els.detailSheet.hidden = true;
-});
+if (els.detailClose) {
+  els.detailClose.addEventListener("click", () => {
+    if (els.detailSheet) els.detailSheet.hidden = true;
+  });
+}
 
 // 클릭 로깅
 function logClick(restaurantName) {
   const url = CONFIG.CLICK_LOG_URL;
-  if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec") || !restaurantName) return;
+  if (!url || !restaurantName) return;
   
   const query = new URLSearchParams({
     type: "click",
@@ -411,10 +409,10 @@ function logClick(restaurantName) {
   
   fetch(`${url}?${query}`, { mode: "no-cors" }).catch(() => {});
 }
-// 공유 로깅 및 실행 함수
+
 function logShare(targetName = "사이트전체") {
   const url = CONFIG.CLICK_LOG_URL;
-  if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec")) return;
+  if (!url) return;
   
   const params = new URLSearchParams({
     type: "share",
@@ -423,6 +421,7 @@ function logShare(targetName = "사이트전체") {
   
   fetch(`${url}?${params}`, { mode: "no-cors" }).catch(() => {});
 }
+
 function executeShare(title, text, url, targetName) {
   if (navigator.share) {
     navigator.share({
@@ -446,7 +445,7 @@ const LAST_VISIT_DATE_KEY = "gnfood_last_visit_date";
 
 async function trackVisit() {
   const url = CONFIG.CLICK_LOG_URL;
-  if (!url || url.includes("https://script.google.com/macros/s/AKfycbwvVoyvOX1Ki3C8AgD4INzGRgBFLRWhSVXpmo6Mj-1eJ_gYl65dKP3sygFM3medOToM/exec")) return;
+  if (!url) return;
 
   let visitorId = localStorage.getItem(VISITOR_ID_KEY);
   const isNewVisitor = !visitorId;
@@ -465,11 +464,10 @@ async function trackVisit() {
     newToday: isNewToday ? "1" : "0",
   });
 
-  // mode: "no-cors" 방식으로 구글 보안 차단(CORS)을 회피합니다.
   fetch(`${url}?${params.toString()}`, { mode: "no-cors" }).catch(() => {});
 }
 
-// 6. 롤링 배너
+// 6. 하단 롤링 배너
 function initBannerSlider() {
   const slider = document.getElementById("bannerSlider");
   if (!slider) return;
@@ -483,15 +481,17 @@ function initBannerSlider() {
   let currentIndex = 0;
   let timer = null;
 
-  dotsContainer.innerHTML = "";
-  slides.forEach((_, idx) => {
-    const dot = document.createElement("div");
-    dot.className = "banner-dot" + (idx === 0 ? " active" : "");
-    dot.addEventListener("click", () => goToSlide(idx));
-    dotsContainer.appendChild(dot);
-  });
+  if (dotsContainer) {
+    dotsContainer.innerHTML = "";
+    slides.forEach((_, idx) => {
+      const dot = document.createElement("div");
+      dot.className = "banner-dot" + (idx === 0 ? " active" : "");
+      dot.addEventListener("click", () => goToSlide(idx));
+      dotsContainer.appendChild(dot);
+    });
+  }
 
-  const dots = dotsContainer.querySelectorAll(".banner-dot");
+  const dots = dotsContainer ? dotsContainer.querySelectorAll(".banner-dot") : [];
 
   function goToSlide(index) {
     currentIndex = index;
@@ -520,11 +520,10 @@ function initBannerSlider() {
 }
 
 // 7. 부트스트랩 및 이벤트 리스너 바인딩
-els.search.addEventListener("input", renderAll);
-els.starOnly.addEventListener("change", renderAll);
-els.reviewOnly.addEventListener("change", renderAll);
+if (els.search) els.search.addEventListener("input", renderAll);
+if (els.starOnly) els.starOnly.addEventListener("change", renderAll);
+if (els.reviewOnly) els.reviewOnly.addEventListener("change", renderAll);
 
-// 상단 헤더 메인 공유 버튼
 const mainShareBtn = document.getElementById("mainShareBtn");
 if (mainShareBtn) {
   mainShareBtn.addEventListener("click", () => {
@@ -538,9 +537,6 @@ if (mainShareBtn) {
 }
 
 async function bootstrap() {
-  const updatedText = await fetchLastUpdatedDate();
-  els.verDate.textContent = updatedText;
-
   initMap();
   trackVisit();
   initBannerSlider();
@@ -548,13 +544,15 @@ async function bootstrap() {
   try {
     ALL_ITEMS = await loadSheetData();
   } catch (err) {
-    els.mapStatus.textContent = err.message;
-    els.emptyState.hidden = false;
-    els.emptyState.textContent = "데이터를 불러오지 못했습니다. config.js 및 시트 공유 권한을 확인해주세요.";
+    if (els.mapStatus) els.mapStatus.textContent = err.message;
+    if (els.emptyState) {
+      els.emptyState.hidden = false;
+      els.emptyState.textContent = "데이터를 불러오지 못했습니다. config.js 및 시트 공유 권한을 확인해주세요.";
+    }
     return;
   }
 
-  els.totalCount.textContent = `${ALL_ITEMS.length}곳 수록`;
+  if (els.totalCount) els.totalCount.textContent = `${ALL_ITEMS.length}곳 수록`;
   renderChips(ALL_ITEMS);
   renderList(ALL_ITEMS);
   resolveCoordinates(ALL_ITEMS);
@@ -562,9 +560,7 @@ async function bootstrap() {
 
 bootstrap();
 
-// ============================================================
 // 모바일 Intro 3줄 보기 / 접기 토글
-// ============================================================
 document.addEventListener("DOMContentLoaded", () => {
   const introText = document.getElementById("introText");
   if (introText) {

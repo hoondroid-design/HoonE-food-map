@@ -61,7 +61,7 @@ async function loadSheetData() {
   const items = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    if (!r || !Array.isArray(r) || r.length < 3) continue;
+    if (!r || !Array.isArray(r) || r.length < 5) continue;
     
     // Safety guard against undefined values
     const category = String(r[0] || "").trim() || "Others";
@@ -80,15 +80,15 @@ async function loadSheetData() {
     items.push({
       id: `${displayName}__${addressKo}`,
       starred: false,
-      category: category,
-      menu: menu,
-      name: displayName,
-      nameKo: nameKo,
-      address: addressEn || addressKo,
-      addressKo: addressKo,
-      note: noteEn,
-      visited: visited,
-      blog: blog,
+      category: category,       // B열 영문 카테고리
+      menu: menu,               // C열 영문 대표메뉴
+      name: displayName,        // E열 영문 상호명 (메인)
+      nameKo: nameKo,           // D열 한글 상호명 (보조)
+      address: addressEn || addressKo, // G열 영문 주소
+      addressKo: addressKo,     // F열 한글 주소 (지도용)
+      note: noteEn,             // I열 영문 한줄평
+      visited: visited,         // J열 방문 여부
+      blog: blog,               // K열 리뷰 링크
       lat: null,
       lng: null,
     });

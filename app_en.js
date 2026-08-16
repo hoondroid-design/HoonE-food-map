@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (Safe Error-Free Version)
+// What to Eat in Gangneung — app_en.js (Complete Fixed Version)
 // ============================================================
 
 const els = {
@@ -12,7 +12,6 @@ const els = {
   starOnly: document.getElementById("starOnly"),
   reviewOnly: document.getElementById("reviewOnly"),
   totalCount: document.getElementById("totalCount"),
-  visitCounter: document.getElementById("visitCounter"),
   detailSheet: document.getElementById("detailSheet"),
   detailBody: document.getElementById("detailBody"),
   detailClose: document.getElementById("detailClose"),
@@ -35,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. Fetch Google Sheet CSV (Using English Sheet GID: 1598641787)
+// 1. Fetch Google Sheet (English Sheet GID: 1598641787)
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
   const ENGLISH_GID = "1598641787";
@@ -61,34 +60,47 @@ async function loadSheetData() {
   const items = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    if (!r || !Array.isArray(r) || r.length < 5) continue;
+    if (!r || !Array.isArray(r) || r.length < 3) continue;
     
-    // Safety guard against undefined values
-    const category = String(r[0] || "").trim() || "Others";
-    const menu = String(r[1] || "").trim();
-    const nameKo = String(r[2] || "").trim();
-    const nameEn = String(r[3] || "").trim();
-    const addressKo = String(r[4] || "").trim();
-    const addressEn = String(r[5] || "").trim();
-    const noteEn = String(r[7] || "").trim();
-    const visited = String(r[8] || "").trim() === "O";
-    const blog = String(r[9] || "").trim();
+    // 시트 검은색 열(English Data) 1:1 정확한 인덱스 매핑
+    // A열: 추천 여부 (별점 용도)
+    // B열(r[1]): Category (Bakery, Korean Food, Seafood 등)
+    // C열(r[2]): Featured Menu (Bread, Mandu 등)
+    // D열(r[3]): Name (Ko)
+    // E열(r[4]): Name (En)
+    // F열(r[5]): Address (Ko)
+    // G열(r[6]): Address (En)
+    // H열(r[7]): Owner's Pick (Ko) - 생략
+    // I열(r[8]): Owner's Pick (En)
+    // J열(r[9]): Visited in Person (O / X)
+    // K열(r[10]): Owner's Review (Link)
+
+    const starVal = String(r[0] || "").trim();
+    const category = String(r[1] || "").trim() || "Others";
+    const menu = String(r[2] || "").trim();
+    const nameKo = String(r[3] || "").trim();
+    const nameEn = String(r[4] || "").trim();
+    const addressKo = String(r[5] || "").trim();
+    const addressEn = String(r[6] || "").trim();
+    const noteEn = String(r[8] || "").trim();
+    const visited = String(r[9] || "").trim() === "O";
+    const blog = String(r[10] || "").trim();
 
     const displayName = nameEn || nameKo;
     if (!displayName) continue;
 
     items.push({
       id: `${displayName}__${addressKo}`,
-      starred: false,
-      category: category,       // B열 영문 카테고리
-      menu: menu,               // C열 영문 대표메뉴
-      name: displayName,        // E열 영문 상호명 (메인)
-      nameKo: nameKo,           // D열 한글 상호명 (보조)
-      address: addressEn || addressKo, // G열 영문 주소
-      addressKo: addressKo,     // F열 한글 주소 (지도용)
-      note: noteEn,             // I열 영문 한줄평
-      visited: visited,         // J열 방문 여부
-      blog: blog,               // K열 리뷰 링크
+      starred: !!starVal,
+      category: category,
+      menu: menu,
+      name: displayName,
+      nameKo: nameKo,
+      address: addressEn || addressKo,
+      addressKo: addressKo,
+      note: noteEn,
+      visited: visited,
+      blog: blog,
       lat: null,
       lng: null,
     });
@@ -224,7 +236,7 @@ function applyVisibility(item, visible) {
   if (o) o.setMap(visible ? map : null);
 }
 
-// 4. Category Chips & List
+// 4. Category Chips & List Render
 function renderChips(items) {
   if (!els.chips) return;
   const rawCats = items.map((i) => i.category).filter(Boolean);
@@ -275,6 +287,7 @@ function renderList(items) {
     li.className = "list-item";
     
     const reviewBadge = item.blog ? `<span class="review-badge" title="Has Review">N</span>` : "";
+    const starBadge = item.starred ? `<span class="star-badge">★</span>` : "";
 
     li.innerHTML = `
       <span class="idx">no.${String(idx + 1).padStart(3, "0")}</span>
@@ -282,6 +295,7 @@ function renderList(items) {
         <div class="row1">
           <span class="name">${escapeHtml(item.name)} <small style="font-weight:normal; font-size:12px; color:#888;">(${escapeHtml(item.nameKo)})</small></span>
           <span class="tag">${escapeHtml(item.category)}</span>
+          ${starBadge}
           ${reviewBadge}
         </div>
         <div class="menu">${escapeHtml(item.menu)}</div>
@@ -313,7 +327,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// 5. Detail Sheet
+// 5. Detail Sheet & Modal Open
 function buildDirectionLinks(item) {
   if (!item.lat || !item.lng) return "";
   const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.nameKo || item.name)},${item.lat},${item.lng}`;
@@ -352,7 +366,7 @@ function openDetail(item) {
   if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `
     <div class="detail-eyebrow">${escapeHtml(item.category)} · ${escapeHtml(item.menu)}</div>
-    <div class="detail-title">${escapeHtml(item.name)} <span style="font-size:16px; color:#666; font-weight:normal;">(${escapeHtml(item.nameKo)})</span></div>
+    <div class="detail-title">${item.starred ? "★ " : ""}${escapeHtml(item.name)} <span style="font-size:16px; color:#666; font-weight:normal;">(${escapeHtml(item.nameKo)})</span></div>
     <div class="detail-row detail-row--address">
       <span><b>Address</b> · ${escapeHtml(item.address)}</span>
       ${item.addressKo ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 Copy Korean Address</button>` : ""}

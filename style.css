@@ -29,6 +29,43 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ============================================================
+   ★ [신규] 최상단 즐겨찾기 & PWA 저장 CTA 바
+============================================================= */
+.top-cta-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+.top-cta-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--line-dark);
+  background: #ffffff;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  font-family: var(--font-body);
+}
+.top-cta-btn:hover {
+  border-color: var(--ink);
+  background: #f9f9f9;
+}
+.top-cta-btn--primary {
+  background: var(--primary);
+  color: #ffffff;
+  border: 1px solid var(--primary);
+}
+.top-cta-btn--primary:hover {
+  background: #e0314f;
+  border-color: #e0314f;
+}
+
 /* Header */
 .site-header {
   background: #ffffff;
@@ -71,7 +108,6 @@ body {
 }
 .meta-pill--muted { color: var(--ink-sub); background: #f7f7f7; }
 
-/* 👇 [여기 바로 아래에 붙여넣어 주세요!] */
 .meta-pill--share {
   border: 1px solid var(--ink);
   background: var(--ink);
@@ -100,6 +136,38 @@ body {
   gap: 12px;
   align-items: center;
 }
+
+/* ============================================================
+   ★ [신규] 검색창 상단 반응형 롤링 배너 (최대 3개)
+============================================================= */
+.top-search-banner {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 12px;
+  overflow: hidden; /* 영역을 벗어나는 2, 3번 배너 숨김 */
+  border-radius: var(--radius-md);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+.top-search-banner .banner-wrapper {
+  display: flex;
+  width: 100%;
+  transition: transform 0.5s ease-in-out;
+}
+.top-search-banner .banner-item {
+  width: 100%; /* 슬라이드 1개당 프레임 크기를 100% 가득 채움 */
+  flex-shrink: 0; /* 화면 축소 시 이미지 찌그러짐 방지 */
+  display: block;
+}
+.top-search-banner img {
+  width: 100%;
+  height: auto;
+  max-height: 140px; /* PC/모바일에서 잘림 및 과도한 가로 확장 방지 */
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-md);
+}
+
 .search-wrap { position: relative; flex: 1 1 280px; min-width: 220px; }
 .search-icon {
   position: absolute;
@@ -373,7 +441,7 @@ body {
   background: #ffffff;
 }
 
-/* Banner */
+/* Lower Banner */
 .banner-section { max-width: 1280px; margin: 32px auto 16px; padding: 0 24px; }
 .banner-container {
   max-width: 1000px;
@@ -438,9 +506,7 @@ body {
   line-height: 1.6;
 }
 
-/* ============================================================
-   Intro 모바일 더보기 (3줄 제한 & 토글 버튼)
-================================================ ============ */
+/* Intro 모바일 더보기 (3줄 제한 & 토글 버튼) */
 .intro-container {
   margin-top: 4px;
 }
@@ -453,7 +519,6 @@ body {
   line-height: 1.6;
 }
 
-/* 기본 PC 화면에서는 더보기 버튼 숨김 */
 .more-btn {
   display: none;
   background: none;
@@ -468,21 +533,22 @@ body {
 
 /* 📱 모바일 화면 (768px 이하) 전용 스타일 */
 @media (max-width: 768px) {
-  /* 3줄 제한 CSS */
   .intro-text.clamp {
     display: -webkit-box;
-    -webkit-line-clamp: 3; /* 미리 보여줄 줄 수 */
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  /* 모바일에서만 더보기 버튼 노출 */
   .more-btn {
     display: inline-block;
   }
-}
 
+  .top-search-banner img {
+    max-height: 100px; /* 모바일 전용 배너 높이 조절 */
+  }
+}
 
 /* Responsive */
 @media (max-width: 880px) {

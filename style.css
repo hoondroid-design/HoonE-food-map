@@ -137,68 +137,6 @@ body {
   align-items: center;
 }
 
-/* ============================================================
-   ★ [완벽 수정] 검색창 상단 반응형 롤링 배너
-============================================================= */
-.top-search-banner {
-  width: 100%;
-  margin-bottom: 12px;
-  overflow: hidden; /* 영역 밖 옆 배너 완벽 차단 */
-  border-radius: var(--radius-lg);
-  position: relative;
-  box-shadow: var(--shadow-sm);
-  background: #f0f0f0;
-}
-
-.top-search-banner .banner-wrapper {
-  display: flex;
-  width: 100%;
-  transition: transform 0.5s ease-in-out;
-}
-
-.top-search-banner .banner-item {
-  flex: 0 0 100%; /* 슬라이더 항목 너비 100% 고정 */
-  width: 100%;
-  display: block;
-}
-
-.top-search-banner img {
-  width: 100%;
-  height: auto; /* 고정 높이 제거하여 상하 짤림 원천 차단 */
-  display: block;
-  object-fit: contain; /* 원본 비율 100% 보존 */
-}
-
-.top-search-banner .banner-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.85);
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
-  z-index: 10;
-}
-.top-search-banner .banner-btn.prev { left: 12px; }
-.top-search-banner .banner-btn.next { right: 12px; }
-
-.top-search-banner .banner-dots {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 6px;
-  z-index: 10;
-}
-
 .search-wrap { position: relative; flex: 1 1 280px; min-width: 220px; }
 .search-icon {
   position: absolute;
@@ -472,8 +410,14 @@ body {
   background: #ffffff;
 }
 
-/* Lower Banner */
-.banner-section { max-width: 1280px; margin: 32px auto 16px; padding: 0 24px; }
+/* ============================================================
+   ★ [통합 완료] 공통 반응형 배너 섹션 (상단 및 하단 공용)
+============================================================= */
+.banner-section { 
+  max-width: 1280px; 
+  margin: 32px auto 16px; 
+  padding: 0 24px; 
+}
 .banner-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -482,13 +426,28 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   background: #e0e0e0;
-  aspect-ratio: 1000 / 180;
+  aspect-ratio: 1000 / 180; /* PC/모바일 정비율 반응형 유지 */
 }
-.banner-slider { display: flex; width: 100%; height: 100%; transition: transform 0.4s ease-in-out; }
-.banner-slide { flex: 0 0 100%; width: 100%; height: 100%; display: block; }
-.banner-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.banner-slider { 
+  display: flex; 
+  width: 100%; 
+  height: 100%; 
+  transition: transform 0.4s ease-in-out; 
+}
+.banner-slide { 
+  flex: 0 0 100%; 
+  width: 100%; 
+  height: 100%; 
+  display: block; 
+}
+.banner-slide img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block; 
+}
 
-/* 공통 배너 버튼 & 도트 스타일 */
+/* 공통 배너 화살표 버튼 & 도트 인디케이터 */
 .banner-btn {
   position: absolute;
   top: 50%;
@@ -576,12 +535,6 @@ body {
 
   .more-btn {
     display: inline-block;
-  }
-
-  .top-search-banner .banner-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 10px;
   }
 }
 

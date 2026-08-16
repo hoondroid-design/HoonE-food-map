@@ -63,22 +63,34 @@ async function loadSheetData() {
     const r = rows[i];
     if (!r || r.length < 4) continue;
     
-    // Column Index Mapping (A: Star, B: Category, C: Menu, D: Name, E: Address, F: Note, G: Visited, H: Blog)
-    const [star, category, menu, name, address, note, visited, blog] = r;
-    if (!name || !name.trim()) continue; 
+    // 이미지 열 매핑 기준
+    // A: Category(En), B: Menu(En), C: Name(Ko), D: Name(En), E: Address(Ko), F: Address(En), G: Pick(Ko), H: Pick(En), I: Visited, J: Review
+    const category = (r[0] || "").trim() || "Others";
+    const menu = (r[1] || "").trim();
+    const nameKo = (r[2] || "").trim();
+    const nameEn = (r[3] || "").trim();
+    const addressKo = (r[4] || "").trim();
+    const addressEn = (r[5] || "").trim();
+    const noteEn = (r[7] || "").trim();
+    const visited = (r[8] || "").trim() === "O";
+    const blog = (r[9] || "").trim();
 
-    const cleanAddress = (address || "").trim();
+    // 메인 표시 이름은 영문, 없으면 한글 사용
+    const displayName = nameEn || nameKo;
+    if (!displayName) continue;
 
     items.push({
-      id: `${name.trim()}__${cleanAddress}`,
-      starred: !!(star && star.trim()),
-      category: (category || "").trim() || "Others",
-      menu: (menu || "").trim(),
-      name: name.trim(),
-      address: cleanAddress,
-      note: (note || "").trim(),
-      visited: (visited || "").trim() === "O",
-      blog: (blog || "").trim(),
+      id: `${displayName}__${addressKo}`,
+      starred: false, // 별점 항목이 시트에 없으므로 기본값 false
+      category: category,
+      menu: menu,
+      name: displayName,        // 메인 상호명 (영문)
+      nameKo: nameKo,           // 보조 상호명 (한글)
+      address: addressEn || addressKo, // 화면 표시용 주소 (영문)
+      addressKo: addressKo,     // 지도 검색용 주소 (한글)
+      note: noteEn,             // 한줄평 (영문)
+      visited: visited,
+      blog: blog,
       lat: null,
       lng: null,
     });
@@ -131,13 +143,13 @@ async function resolveCoordinates(items) {
   renderMapStatus(resolvedCount, items.length, toLookup.length > 0);
 
   for (const it of toLookup) {
-    let coord = null;
-    if (it.address) {
-      coord = await geocodeAddressOnce(it.address);
+  let coord = null;
+    if (it.addressKo) {
+      coord = await geocodeAddressOnce(it.addressKo);
     }
     if (!coord) {
-      coord = await keywordSearchOnce(`강릉 ${it.address} ${it.name}`.trim())
-        || await keywordSearchOnce(`강릉 ${it.name}`);
+      coord = await keywordSearchOnce(`강릉 ${it.addressKo} ${it.nameKo}`.trim())
+        || await keywordSearchOnce(`강릉 ${it.nameKo}`);
     }
 
     if (coord) {
@@ -260,15 +272,14 @@ function renderList(items) {
     li.className = "list-item";
     
     const reviewBadge = item.blog ? `<span class="review-badge" title="Has Review">N</span>` : "";
-    const starIcon = item.starred ? `<span class="star-badge">★</span>` : "";
 
     li.innerHTML = `
       <span class="idx">no.${String(idx + 1).padStart(3, "0")}</span>
       <div class="body">
         <div class="row1">
-          <span class="name">${escapeHtml(item.name)}</span>
+          <!-- 영문 상호명 메인 표시 + 한글 상호명 보조 표시 -->
+          <span class="name">${escapeHtml(item.name)} <small style="font-weight:normal; font-size:13px; color:#888;">(${escapeHtml(item.nameKo)})</small></span>
           <span class="tag">${escapeHtml(item.category)}</span>
-          ${starIcon}
           ${reviewBadge}
         </div>
         <div class="menu">${escapeHtml(item.menu)}</div>
@@ -289,59 +300,15 @@ function renderList(items) {
   ALL_ITEMS.forEach((item) => applyVisibility(item, isItemVisible(item)));
 }
 
-function renderAll() {
-  renderList(ALL_ITEMS);
-}
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// 5. Detail Sheet & Utility
-function buildDirectionLinks(item) {
-  if (!item.lat || !item.lng) return "";
-  const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(item.name)},${item.lat},${item.lng}`;
-  const tmapUrl = `tmap://route?goalname=${encodeURIComponent(item.name)}&goalx=${item.lng}&goaly=${item.lat}`;
-  
-  let html = `<a class="detail-link" href="${kakaoUrl}" target="_blank" rel="noopener">🚗 Kakao Map Route</a>`;
-  if (IS_MOBILE) {
-    html += `<a class="detail-link detail-link--alt" href="${tmapUrl}">🚕 TMAP Route</a>`;
-  }
-  return html;
-}
-
-function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    return navigator.clipboard.writeText(text);
-  }
-  return new Promise((resolve, reject) => {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      resolve();
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
+// 상세페이지 팝업 렌더링 부분
 function openDetail(item) {
   if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `
     <div class="detail-eyebrow">${escapeHtml(item.category)} · ${escapeHtml(item.menu)}</div>
-    <div class="detail-title">${item.starred ? "★ " : ""}${escapeHtml(item.name)}</div>
+    <div class="detail-title">${escapeHtml(item.name)} <span style="font-size:16px; color:#666; font-weight:normal;">(${escapeHtml(item.nameKo)})</span></div>
     <div class="detail-row detail-row--address">
       <span><b>Address</b> · ${escapeHtml(item.address)}</span>
-      ${item.address ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 Copy Address</button>` : ""}
+      ${item.addressKo ? `<button type="button" class="copy-btn" id="copyAddressBtn">📋 Copy Korean Address</button>` : ""}
     </div>
     <div class="detail-row"><b>Visited</b> · ${item.visited ? "Visited in Person" : "Not Visited / Word of Mouth"}</div>
     ${item.note ? `
@@ -357,23 +324,22 @@ function openDetail(item) {
   `;
   els.detailSheet.hidden = false;
 
+  // 주소 복사 버튼 누르면 카카오 택시나 내비에 치기 좋게 '한글 주소'가 복사되도록 설정
   const copyBtn = document.getElementById("copyAddressBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
-      copyToClipboard(item.address)
+      copyToClipboard(item.addressKo)
         .then(() => {
-          copyBtn.textContent = "✅ Copied";
+          copyBtn.textContent = "✅ Copied (Korean)";
           copyBtn.classList.add("copy-btn--done");
           setTimeout(() => {
-            copyBtn.textContent = "📋 Copy Address";
+            copyBtn.textContent = "📋 Copy Korean Address";
             copyBtn.classList.remove("copy-btn--done");
           }, 1500);
-        })
-        .catch(() => {
-          copyBtn.textContent = "Failed";
         });
     });
   }
+}
 
   const shareDetailBtn = document.getElementById("shareDetailBtn");
   if (shareDetailBtn) {

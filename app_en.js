@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (Header-based Dynamic Parsing)
+// What to Eat in Gangneung — app_en.js (Bulletproof Column Finder)
 // ============================================================
 
 const els = {
@@ -34,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. Fetch Google Sheet Data (Header-matching logic)
+// 1. Fetch Google Sheet Data (Exact Header Match Engine)
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
   const ENGLISH_GID = "1598641787";
@@ -54,13 +54,13 @@ async function loadSheetData() {
     throw new Error(`Failed to load sheet data (HTTP ${res.status}).`);
   }
   const csvText = await res.text();
-  const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: false });
+  const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: true });
   const rows = parsed.data || [];
 
   if (rows.length < 2) return [];
 
-  // 헤더명을 탐색하여 정확한 열 인덱스 자동 감지
-  let colIdx = {
+  // 헤더명을 동적으로 탐색하는 인덱스 객체
+  let cIdx = {
     star: -1,
     category: -1,
     menu: -1,
@@ -73,67 +73,59 @@ async function loadSheetData() {
     blog: -1
   };
 
-  // 1번째 줄(헤더 행) 감지
-  for (let rowIdx = 0; rowIdx < Math.min(rows.length, 5); rowIdx++) {
-    const r = rows[rowIdx];
-    if (!r) continue;
-    r.forEach((cellVal, cIdx) => {
-      const headerStr = String(cellVal || "").trim().toLowerCase();
-      if (headerStr.includes("구분") || headerStr === "category") colIdx.category = cIdx;
-      if (headerStr.includes("featured menu")) colIdx.menu = cIdx;
-      if (headerStr.includes("name (ko)") || headerStr.includes("name(ko)")) colIdx.nameKo = cIdx;
-      if (headerStr.includes("name (en)") || headerStr.includes("name(en)")) colIdx.nameEn = cIdx;
-      if (headerStr.includes("address(ko)") || headerStr.includes("address (ko)")) colIdx.addressKo = cIdx;
-      if (headerStr.includes("address(en)") || headerStr.includes("address (en)")) colIdx.addressEn = cIdx;
-      if (headerStr.includes("owner's pick (en)") || headerStr.includes("pick (en)")) colIdx.noteEn = cIdx;
-      if (headerStr.includes("visited")) colIdx.visited = cIdx;
-      if (headerStr.includes("owner's review") || headerStr.includes("review")) colIdx.blog = cIdx;
+  // 상단 5개 행 내에서 헤더 자동 검색
+  let headerRowIndex = -1;
+  for (let r = 0; r < Math.min(rows.length, 5); r++) {
+    const row = rows[r];
+    if (!row) continue;
+
+    row.forEach((cellVal, colIndex) => {
+      const val = String(cellVal || "").trim().toLowerCase();
+      if (val.includes("구분") || val === "category") cIdx.category = colIndex;
+      if (val.includes("featured menu") || val.includes("menu")) cIdx.menu = colIndex;
+      if (val.includes("name (ko)") || val.includes("name(ko)")) cIdx.nameKo = colIndex;
+      if (val.includes("name (en)") || val.includes("name(en)")) cIdx.nameEn = colIndex;
+      if (val.includes("address(ko)") || val.includes("address (ko)")) cIdx.addressKo = colIndex;
+      if (val.includes("address(en)") || val.includes("address (en)")) cIdx.addressEn = colIndex;
+      if (val.includes("owner's pick (en)") || val.includes("pick (en)")) cIdx.noteEn = colIndex;
+      if (val.includes("visited in person") || val === "visited") cIdx.visited = colIndex;
+      if (val.includes("owner's review") || val.includes("review")) cIdx.blog = colIndex;
     });
-    if (colIdx.nameKo !== -1 || colIdx.nameEn !== -1) break;
+
+    if (cIdx.nameKo !== -1 || cIdx.nameEn !== -1) {
+      headerRowIndex = r;
+      break;
+    }
   }
 
-  // 헤더 탐색 실패 시 기본 위치 백업 지정
-  if (colIdx.category === -1) colIdx.category = 1;
-  if (colIdx.menu === -1) colIdx.menu = 2;
-  if (colIdx.nameKo === -1) colIdx.nameKo = 3;
-  if (colIdx.nameEn === -1) colIdx.nameEn = 4;
-  if (colIdx.addressKo === -1) colIdx.addressKo = 5;
-  if (colIdx.addressEn === -1) colIdx.addressEn = 6;
-  if (colIdx.noteEn === -1) colIdx.noteEn = 8;     // I열 (Owner's Pick En)
-  if (colIdx.visited === -1) colIdx.visited = 9;   // J열 (Visited in Person)
-  if (colIdx.blog === -1) colIdx.blog = 10;        // K열 (Owner's Review)
-
   const items = [];
-  for (let i = 1; i < rows.length; i++) {
+  const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 1;
+
+  for (let i = startRow; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !Array.isArray(r)) continue;
 
-    const getCell = (c) => (c >= 0 && r[c] !== undefined && r[c] !== null) ? String(r[c]).trim() : "";
+    const getVal = (col) => (col >= 0 && r[col] !== undefined && r[col] !== null) ? String(r[col]).trim() : "";
 
-    const starVal = getCell(colIdx.star);
-    const category = getCell(colIdx.category) || "Others";
-    const menu = getCell(colIdx.menu);
-    const nameKo = getCell(colIdx.nameKo);
-    const nameEn = getCell(colIdx.nameEn);
-    const addressKo = getCell(colIdx.addressKo);
-    const addressEn = getCell(colIdx.addressEn);
+    const category = getVal(cIdx.category) || "Others";
+    const menu = getVal(cIdx.menu);
+    const nameKo = getVal(cIdx.nameKo);
+    const nameEn = getVal(cIdx.nameEn);
+    const addressKo = getVal(cIdx.addressKo);
+    const addressEn = getVal(cIdx.addressEn);
     
-    // I열 영문 한줄 리뷰
-    const noteEn = getCell(colIdx.noteEn);
-    
-    // J열 방문 여부 O 정밀 감지
-    const visitedRaw = getCell(colIdx.visited).toUpperCase();
-    const visited = (visitedRaw === "O" || visitedRaw === "0" || visitedRaw.includes("YES") || visitedRaw.includes("TRUE"));
-    
-    // K열 블로그 링크
-    const blog = getCell(colIdx.blog);
+    // I열 영문 리뷰 & J열 Visited 추출
+    const noteEn = getVal(cIdx.noteEn);
+    const visitedStr = getVal(cIdx.visited).toUpperCase();
+    const visited = (visitedStr === "O" || visitedStr === "0" || visitedStr === "YES");
+    const blog = getVal(cIdx.blog);
 
     const displayName = nameEn || nameKo;
     if (!displayName || displayName.toLowerCase().includes("name (en)")) continue;
 
     items.push({
       id: `${displayName}__${addressKo}`,
-      starred: !!starVal,
+      starred: false,
       category: category,
       menu: menu,
       name: displayName,
@@ -141,7 +133,7 @@ async function loadSheetData() {
       address: addressEn || addressKo,
       addressKo: addressKo,
       note: noteEn,             // 영문 한줄 리뷰
-      visited: visited,         // 방문 여부 감지 결과
+      visited: visited,         // Visited 'O' 판단 결과
       blog: blog,
       lat: null,
       lng: null,

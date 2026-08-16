@@ -1,5 +1,5 @@
 // ============================================================
-// What to Eat in Gangneung — app_en.js (Bulletproof Column Finder)
+// What to Eat in Gangneung — app_en.js (Fixed Column Direct Mapping)
 // ============================================================
 
 const els = {
@@ -34,7 +34,7 @@ function saveCoordCache(cache) {
   try { localStorage.setItem(COORD_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
-// 1. Fetch Google Sheet Data (Exact Header Match Engine)
+// 1. Fetch Google Sheet Data (A~K Direct Column Access)
 function buildSheetUrl() {
   const { SHEET_ID, SHEET_RANGE } = CONFIG;
   const ENGLISH_GID = "1598641787";
@@ -59,81 +59,70 @@ async function loadSheetData() {
 
   if (rows.length < 2) return [];
 
-  // 헤더명을 동적으로 탐색하는 인덱스 객체
-  let cIdx = {
-    star: -1,
-    category: -1,
-    menu: -1,
-    nameKo: -1,
-    nameEn: -1,
-    addressKo: -1,
-    addressEn: -1,
-    noteEn: -1,
-    visited: -1,
-    blog: -1
-  };
-
-  // 상단 5개 행 내에서 헤더 자동 검색
-  let headerRowIndex = -1;
-  for (let r = 0; r < Math.min(rows.length, 5); r++) {
-    const row = rows[r];
-    if (!row) continue;
-
-    row.forEach((cellVal, colIndex) => {
-      const val = String(cellVal || "").trim().toLowerCase();
-      if (val.includes("구분") || val === "category") cIdx.category = colIndex;
-      if (val.includes("featured menu") || val.includes("menu")) cIdx.menu = colIndex;
-      if (val.includes("name (ko)") || val.includes("name(ko)")) cIdx.nameKo = colIndex;
-      if (val.includes("name (en)") || val.includes("name(en)")) cIdx.nameEn = colIndex;
-      if (val.includes("address(ko)") || val.includes("address (ko)")) cIdx.addressKo = colIndex;
-      if (val.includes("address(en)") || val.includes("address (en)")) cIdx.addressEn = colIndex;
-      if (val.includes("owner's pick (en)") || val.includes("pick (en)")) cIdx.noteEn = colIndex;
-      if (val.includes("visited in person") || val === "visited") cIdx.visited = colIndex;
-      if (val.includes("owner's review") || val.includes("review")) cIdx.blog = colIndex;
-    });
-
-    if (cIdx.nameKo !== -1 || cIdx.nameEn !== -1) {
-      headerRowIndex = r;
-      break;
-    }
-  }
-
   const items = [];
-  const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 1;
 
-  for (let i = startRow; i < rows.length; i++) {
+  for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
-    if (!r || !Array.isArray(r)) continue;
+    if (!r || !Array.isArray(r) || r.length < 3) continue;
 
-    const getVal = (col) => (col >= 0 && r[col] !== undefined && r[col] !== null) ? String(r[col]).trim() : "";
+    // 헤더 행 스킵
+    const firstCell = String(r[0] || "").toLowerCase();
+    const secondCell = String(r[1] || "").toLowerCase();
+    const thirdCell = String(r[2] || "").toLowerCase();
+    if (firstCell.includes("구분") || secondCell.includes("category") || thirdCell.includes("featured menu")) {
+      continue;
+    }
 
-    const category = getVal(cIdx.category) || "Others";
-    const menu = getVal(cIdx.menu);
-    const nameKo = getVal(cIdx.nameKo);
-    const nameEn = getVal(cIdx.nameEn);
-    const addressKo = getVal(cIdx.addressKo);
-    const addressEn = getVal(cIdx.addressEn);
+    // 배열 내 데이터 안전 추출 함수
+    const val = (idx) => (r[idx] !== undefined && r[idx] !== null) ? String(r[idx]).trim() : "";
+
+    /* 구글 시트 알파벳 열 1:1 고정 매핑
+       ----------------------------------
+       A열 (r[0]) : 별점 (Star)
+       B열 (r[1]) : 구분 (Category - En)
+       C열 (r[2]) : Featured Menu (En)
+       D열 (r[3]) : Name (Ko)
+       E열 (r[4]) : Name (En)
+       F열 (r[5]) : Address (Ko)
+       G열 (r[6]) : Address (En)
+       H열 (r[7]) : Owner's Pick (Ko)
+       I열 (r[8]) : Owner's Pick (En) - 영문 한줄리뷰!
+       J열 (r[9]) : Visited in Person - 방문 여부 O!
+       K열 (r[10]): Owner's Review - 블로그 링크
+    */
+
+    const starVal = val(0);
+    const category = val(1) || "Others";
+    const menu = val(2);
+    const nameKo = val(3);
+    const nameEn = val(4);
+    const addressKo = val(5);
+    const addressEn = val(6);
     
-    // I열 영문 리뷰 & J열 Visited 추출
-    const noteEn = getVal(cIdx.noteEn);
-    const visitedStr = getVal(cIdx.visited).toUpperCase();
-    const visited = (visitedStr === "O" || visitedStr === "0" || visitedStr === "YES");
-    const blog = getVal(cIdx.blog);
+    // ★ I열 (r[8]) = 영문 한줄 리뷰
+    const noteEn = val(8);
+    
+    // ★ J열 (r[9]) = 방문 여부 ('O', 'o', '0', 'Yes' 감지)
+    const visitedRaw = val(9).toUpperCase();
+    const visited = (visitedRaw === "O" || visitedRaw === "0" || visitedRaw.includes("YES"));
+    
+    // K열 (r[10]) = 블로그 후기 링크
+    const blog = val(10);
 
     const displayName = nameEn || nameKo;
-    if (!displayName || displayName.toLowerCase().includes("name (en)")) continue;
+    if (!displayName) continue;
 
     items.push({
       id: `${displayName}__${addressKo}`,
-      starred: false,
+      starred: !!starVal,
       category: category,
       menu: menu,
       name: displayName,
       nameKo: nameKo,
       address: addressEn || addressKo,
       addressKo: addressKo,
-      note: noteEn,             // 영문 한줄 리뷰
-      visited: visited,         // Visited 'O' 판단 결과
+      note: noteEn,             // I열 매핑
+      visited: visited,         // J열 매핑
       blog: blog,
       lat: null,
       lng: null,
@@ -410,7 +399,7 @@ function buildDirectionLinks(item) {
   return html;
 }
 
-// 6. Detail Sheet Modal
+// 6. Detail Sheet Modal (I열 & J열 반영)
 function openDetail(item) {
   if (!els.detailBody || !els.detailSheet) return;
   els.detailBody.innerHTML = `

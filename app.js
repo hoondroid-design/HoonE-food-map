@@ -20,6 +20,7 @@ const els = {
 };
 
 let ALL_ITEMS = [];      
+let PAGE_SLUGS = {};      // 식당 id → 상세 페이지 주소 (data/places.json, 매일 자동 생성)
 let CURRENT_CATEGORY = "전체";
 let map, places, geocoder;
 let markers = {};        
@@ -85,6 +86,20 @@ async function loadSheetData() {
     });
   }
   return items;
+}
+
+// 1-1. 상세 페이지 주소 목록 (없어도 사이트는 정상 동작)
+async function loadPageSlugs() {
+  try {
+    const res = await fetch("/data/places.json", { cache: "no-cache" });
+    if (!res.ok) return;
+    (await res.json()).forEach((p) => { PAGE_SLUGS[p.id] = p.slug; });
+  } catch {}
+}
+
+function pageUrlOf(item) {
+  const slug = PAGE_SLUGS[item.id];
+  return slug ? `${location.origin}/place/${encodeURIComponent(slug)}/` : "";
 }
 
 // 2. 카카오 주소/키워드 검색
@@ -351,6 +366,7 @@ function openDetail(item) {
         ${escapeHtml(item.note)}
       </div>` : ""}
     <div class="detail-actions">
+      ${pageUrlOf(item) ? `<a class="detail-link" href="${pageUrlOf(item)}">📄 상세 페이지</a>` : ""}
       <button type="button" class="detail-link detail-link--alt" id="shareDetailBtn">🔗 이 식당 공유하기</button>
       ${item.blog ? `<a class="detail-link detail-link--naver" href="${item.blog}" target="_blank" rel="noopener">작성자 후기 보러가기 →</a>` : ""}
       ${buildDirectionLinks(item)}
@@ -382,7 +398,7 @@ function openDetail(item) {
       executeShare(
         `[강릉 뭐먹지] ${item.name}`,
         `${item.name} (${item.category}) - ${item.menu}\n주소: ${item.address}`,
-        window.location.href,
+        pageUrlOf(item) || window.location.href,
         item.name
       );
     });
@@ -542,7 +558,7 @@ async function bootstrap() {
   initBannerSlider();
 
   try {
-    ALL_ITEMS = await loadSheetData();
+    [ALL_ITEMS] = await Promise.all([loadSheetData(), loadPageSlugs()]);
   } catch (err) {
     if (els.mapStatus) els.mapStatus.textContent = err.message;
     if (els.emptyState) {
@@ -555,7 +571,25 @@ async function bootstrap() {
   if (els.totalCount) els.totalCount.textContent = `${ALL_ITEMS.length}곳 수록`;
   renderChips(ALL_ITEMS);
   renderList(ALL_ITEMS);
+  openFromQuery();
   resolveCoordinates(ALL_ITEMS);
+}
+
+// 상세 페이지의 "지도에서 보기" (/?place=식당) → 해당 식당 바로 열기
+function openFromQuery() {
+  const slug = new URLSearchParams(location.search).get("place");
+  if (!slug) return;
+  const item = ALL_ITEMS.find((it) => PAGE_SLUGS[it.id] === slug || it.name === slug);
+  if (!item) return;
+  openDetail(item);
+  const timer = setInterval(() => {
+    if (item.lat && item.lng && map) {
+      map.setLevel(4);
+      map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+      clearInterval(timer);
+    }
+  }, 300);
+  setTimeout(() => clearInterval(timer), 15000);
 }
 
 bootstrap();

@@ -105,3 +105,36 @@ h2 { font-size: 18px; margin: 0 0 12px; letter-spacing: -0.01em; }
 .seo-all ul { margin: 12px 0 0; padding-left: 18px; columns: 2 260px; font-size: 14px; line-height: 1.9; }
 .seo-all li span { color: #888; font-size: 12px; }
 .seo-updated { font-size: 12px; color: #999; }
+
+/* ---- v2: 사진 · 상세 후기 · 팁 · 소개 페이지 ---- */
+.s-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 6px; }
+.s-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: #eee; display: block; }
+.s-gallery img:first-child { grid-column: 1 / -1; aspect-ratio: 16 / 10; }
+.s-gallery--1 img:first-child { aspect-ratio: 4 / 3; }
+.s-gallery--2 img:first-child { grid-column: auto; aspect-ratio: 4 / 3; }
+.s-photo-note { font-size: 11px; color: var(--sub); margin: 0 0 16px; }
+.s-oneline { font-size: 17px; font-weight: 600; margin: 0 0 10px; }
+.s-detail { font-size: 16px; line-height: 1.75; white-space: pre-line; margin: 0 0 12px; color: #2a2a2e; }
+.s-tip { background: #fffaf0; border: 1px solid #f1e3c4; border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+.s-tip div { white-space: pre-line; font-size: 15px; }
+.s-card a { position: relative; }
+.s-card a:has(.s-thumb) { padding-right: 96px; min-height: 92px; }
+.s-thumb { position: absolute; right: 10px; top: 10px; width: 76px; height: 76px; object-fit: cover; border-radius: 8px; }
+.s-sub { font-size: 16px; margin: 22px 0 10px; }
+.s-sub:first-of-type { margin-top: 6px; }
+.s-sub small { color: var(--sub); font-weight: 500; }
+.s-doc { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 20px; }
+.s-doc h2 { margin-top: 26px; }
+.s-doc p, .s-doc li { font-size: 15px; }
+.s-doc ul { padding-left: 20px; }
+.s-foot a { color: inherit; }
+
+/* 메인 페이지 제목 아래 한 줄 */
+.h1-sub { display: block; font-size: 0.5em; font-weight: 600; opacity: 0.75; margin-top: 6px; letter-spacing: 0; }
+.seo-updated a { color: inherit; }
+
+/* 광고·제휴 문의 (카카오톡 오픈채팅) */
+.s-btn--kakao { background: #fee500; border-color: #fee500; color: #191919; }
+.seo-contact { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 12px 18px; border-radius: 12px; background: #fee500; color: #191919; font-weight: 800; font-size: 15px; text-decoration: none; }
+.seo-contact small { font-weight: 600; opacity: .7; font-size: 12px; }
+.footer-contact { font-weight: 800; color: inherit; white-space: nowrap; }

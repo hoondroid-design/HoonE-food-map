@@ -39,7 +39,7 @@ const SITE = {
   gaId: "G-GLHEB5P95Z",
   adsenseClient: "ca-pub-4761567002853346",
   // 다음 웹마스터도구 인증 문구 (robots.txt 맨 위에 자동으로 들어감)
-  daumPin: "#DaumWebMasterTool:b8346c685654289e4e721848b7e9803cdbb6c3ca0cf95be346decc5514b5f7d1:TEcOMIBivQMU4H7qOlp5xQ==",
+  daumPin: "#DaumWebMasterTool:0c9b7188da85e066e1d568d9d2888f3425111bc87a1bf8546b0c074b575b23ad:TEcOMIBivQMU4H7qOlp5xQ==",
   // 광고·제휴 문의 (카카오톡 오픈채팅). 모든 페이지의 "광고·제휴 문의" 링크가 여기로 연결됨
   contactUrl: "https://open.kakao.com/o/s5woUyRi",
   since: "2017",

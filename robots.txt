@@ -1,3 +1,5 @@
+#DaumWebMasterTool:b8346c685654289e4e721848b7e9803cdbb6c3ca0cf95be346decc5514b5f7d1:TEcOMIBivQMU4H7qOlp5xQ==
+
 User-agent: *
 Allow: /
 
